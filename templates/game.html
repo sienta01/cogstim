@@ -60,6 +60,9 @@
         </div>
   
         <p id="result" class="flow-text blue-text text-darken-4"></p> <!-- Warna biru agar jelas -->
+        <div id="showScoresBtnContainer" style="display:none; margin-top:30px;">
+            <a href="/scores" class="btn-large blue white-text waves-effect waves-light">Lihat Skor</a>
+        </div>
     </div>
 </body>
     
@@ -70,7 +73,8 @@
 
         if (result.finished) {
             document.getElementById("result").innerText = "Permainan Selesai! Skor Anda: " + result.score;
-            document.getElementById("gameForm").style.display = "none";
+            document.querySelector(".btn-container").style.display = "none";
+            document.getElementById("showScoresBtnContainer").style.display = "block";
         } else {
             document.getElementById("emojiDisplay").innerText = result.emoji || "❓";
             document.getElementById("descriptionDisplay").innerText = result.description || "❓";
@@ -90,6 +94,8 @@
 
         if (result.finished) {
             resultElement.innerText = "Permainan Selesai! Skor Anda: " + result.score;
+            document.querySelector(".btn-container").style.display = "none";
+            document.getElementById("showScoresBtnContainer").style.display = "block";
         } else {
             resultElement.innerText = result.message;
             resultElement.style.color = result.message.includes("✅") ? "green" : "red"; // ✅ Hijau, ❌ Merah

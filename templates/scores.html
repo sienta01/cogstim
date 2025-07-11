@@ -7,10 +7,64 @@
 </head>
 <body>
     <h2>Riwayat Skor</h2>
-    <ul>
-        {% for score in scores %}
-            <li>Skor: {{ score.score }} - Waktu: {{ score.timestamp }}</li>
-        {% endfor %}
+    <table id="scoreTable" style="width:80%; margin:auto; font-size:1.5rem; cursor:pointer;">
+        <thead>
+            <tr style="background:#2196F3; color:white;">
+                <th onclick="sortTable(0)">Pengguna &#x25B2;&#x25BC;</th>
+                <th onclick="sortTable(1)">Skor &#x25B2;&#x25BC;</th>
+                <th onclick="sortTable(2)">Waktu &#x25B2;&#x25BC;</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for score in scores %}
+            <tr>
+                <td>{{ score.user.username }}</td>
+                <td>{{ score.score }}</td>
+                <td>{{ score.timestamp }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <script>
+    function sortTable(n) {
+        var table = document.getElementById("scoreTable");
+        var rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        switching = true;
+        dir = "desc";
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+                if (n === 1) { // Skor column, numeric sort
+                    if ((dir == "asc" && parseInt(x.innerHTML) > parseInt(y.innerHTML)) ||
+                        (dir == "desc" && parseInt(x.innerHTML) < parseInt(y.innerHTML))) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else {
+                    if ((dir == "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) ||
+                        (dir == "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase())) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;
+            } else {
+                if (switchcount == 0 && dir == "desc") {
+                    dir = "asc";
+                    switching = true;
+                }
+            }
+        }
+    }
+    </script>
     </ul>
     <a href="{{ url_for('game') }}"><button>Main Lagi</button></a>
 </body>
