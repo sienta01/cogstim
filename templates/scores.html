@@ -10,15 +10,17 @@
     <table id="scoreTable" style="width:80%; margin:auto; font-size:1.5rem; cursor:pointer;">
         <thead>
             <tr style="background:#2196F3; color:white;">
-                <th onclick="sortTable(0)">Pengguna &#x25B2;&#x25BC;</th>
-                <th onclick="sortTable(1)">Skor &#x25B2;&#x25BC;</th>
-                <th onclick="sortTable(2)">Waktu &#x25B2;&#x25BC;</th>
+                <th onclick="sortTable(0)">Nama Pasien &#x25B2;&#x25BC;</th>
+                <th onclick="sortTable(1)">Username &#x25B2;&#x25BC;</th>
+                <th onclick="sortTable(2)">Skor &#x25B2;&#x25BC;</th>
+                <th onclick="sortTable(3)">Waktu &#x25B2;&#x25BC;</th>
             </tr>
         </thead>
         <tbody>
             {% for score in scores %}
             <tr>
-                <td>{{ score.user.username }}</td>
+                <td>{% if patient %}{{ patient.name }}{% elif score.patient %}{{ score.patient.name }}{% else %}-{% endif %}</td>
+                <td>{% if score.patient and score.patient.user %}{{ score.patient.user.username }}{% else %}-{% endif %}</td>
                 <td>{{ score.score }}</td>
                 <td>{{ score.timestamp }}</td>
             </tr>
@@ -38,7 +40,7 @@
                 shouldSwitch = false;
                 x = rows[i].getElementsByTagName("TD")[n];
                 y = rows[i + 1].getElementsByTagName("TD")[n];
-                if (n === 1) { // Skor column, numeric sort
+                if (n === 2) { // Skor column, numeric sort
                     if ((dir == "asc" && parseInt(x.innerHTML) > parseInt(y.innerHTML)) ||
                         (dir == "desc" && parseInt(x.innerHTML) < parseInt(y.innerHTML))) {
                         shouldSwitch = true;

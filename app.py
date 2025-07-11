@@ -24,24 +24,59 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+
 # User Model
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
 
-    # Relationship to Score (Optional)
-    scores = db.relationship('Score', backref='user', lazy=True)
+    # Relationship to Patient
+    patients = db.relationship('Patient', backref='user', lazy=True)
+
+# Patient Model
+class Patient(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    age = db.Column(db.Integer, nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # Relationship to Score
+    scores = db.relationship('Score', backref='patient', lazy=True)
 
 # Score Model
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     score = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
+    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
 
-with app.app_context():
-    db.create_all()
+# Dashboard route
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    user = User.query.get(session["user_id"])
+    patients = Patient.query.filter_by(user_id=user.id).all() if user else []
+    return render_template("dashboard.html", patients=patients)
+
+# Add Patient route
+@app.route("/add_patient", methods=["POST"])
+def add_patient():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    name = request.form.get("name")
+    age = request.form.get("age")
+    notes = request.form.get("notes")
+    if not name:
+        flash("Patient name is required.")
+        return redirect(url_for("dashboard"))
+    patient = Patient(name=name, age=age, notes=notes, user_id=session["user_id"])
+    db.session.add(patient)
+    db.session.commit()
+    flash("Patient added successfully.")
+    return redirect(url_for("dashboard"))
 
 @app.route("/game")
 def game():
@@ -118,7 +153,7 @@ def next_pair():
 
 @app.route("/submit", methods=["POST"])
 def submit():
-    if "user_id" not in session:
+    if "user_id" not in session or "selected_patient_id" not in session:
         return redirect(url_for("login"))
 
     data = request.get_json()
@@ -135,10 +170,9 @@ def submit():
 
     if session["emoji_index"] >= 10:
         # Simpan skor ke database
-        new_score = Score(user_id=session["user_id"], score=session["score"])
+        new_score = Score(score=session["score"], patient_id=session["selected_patient_id"])
         db.session.add(new_score)
         db.session.commit()
-        
         return jsonify({"finished": True, "score": session["score"]})
 
     return jsonify({"message": result_message, "correct_answer": correct_answer})
@@ -152,8 +186,36 @@ def scores():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    user_scores = Score.query.filter_by(user_id=session["user_id"]).order_by(Score.timestamp.desc()).limit(100).all()
+    # Show scores for all patients of this user
+    patients = Patient.query.filter_by(user_id=session["user_id"]).all()
+    patient_ids = [p.id for p in patients]
+    user_scores = Score.query.filter(Score.patient_id.in_(patient_ids)).order_by(Score.timestamp.desc()).limit(100).all()
     return render_template("scores.html", scores=user_scores)
+
+# Select Patient route
+@app.route("/select_patient/<int:patient_id>")
+def select_patient(patient_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
+    if not patient:
+        flash("Patient not found.")
+        return redirect(url_for("dashboard"))
+    session["selected_patient_id"] = patient.id
+    session["selected_patient_name"] = patient.name
+    return redirect(url_for("game"))
+
+# View Patient Scores route
+@app.route("/view_patient_scores/<int:patient_id>")
+def view_patient_scores(patient_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
+    if not patient:
+        flash("Patient not found.")
+        return redirect(url_for("dashboard"))
+    scores = Score.query.filter_by(patient_id=patient.id).order_by(Score.timestamp.desc()).all()
+    return render_template("scores.html", scores=scores, patient=patient)
 
 if __name__ == "__main__":
     app.run(debug=True)
