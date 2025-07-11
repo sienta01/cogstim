@@ -20,7 +20,9 @@ emoji_set = [
     {"emoji": "🎂", "description": "Kue"}
 ]
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+import os
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -222,5 +224,3 @@ def view_patient_scores(patient_id):
     scores = Score.query.filter_by(patient_id=patient.id).order_by(Score.timestamp.desc()).all()
     return render_template("scores.html", scores=scores, patient=patient)
 
-if __name__ == "__main__":
-    app.run(debug=True)
