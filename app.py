@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
@@ -20,9 +20,8 @@ emoji_set = [
     {"emoji": "🎂", "description": "Kue"}
 ]
 
-# Database Initialization
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Optional, but recommended
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # User Model
@@ -42,19 +41,49 @@ class Score(db.Model):
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
 with app.app_context():
-    db.create_all()  # ✅ Create all tables before running the app
+    db.create_all()
 
 @app.route("/game")
 def game():
-    # if 'user_id' not in session:
-    #     return redirect(url_for('login'))
-
-    # ✅ RESET SESSION jika game baru dimulai
-    session["emoji_queue"] = random.sample(emoji_set, 10)  # Ambil 10 emoji acak
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    session["emoji_queue"] = random.sample(emoji_set, 10)
     session["emoji_index"] = 0
-    session["score"] = 0  # Reset skor
-
+    session["score"] = 0
     return render_template('game.html')
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password_hash, password):
+            session["user_id"] = user.id
+            return redirect(url_for("game"))
+        else:
+            flash("Username atau password salah.")
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        if User.query.filter_by(username=username).first():
+            flash("Username sudah digunakan.")
+            return render_template("register.html")
+        password_hash = generate_password_hash(password)
+        new_user = User(username=username, password_hash=password_hash)
+        db.session.add(new_user)
+        db.session.commit()
+        session["user_id"] = new_user.id
+        return redirect(url_for("game"))
+    return render_template("register.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 @app.route("/next")
 def next_pair():
