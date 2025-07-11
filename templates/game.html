@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game</title>
+
+    <!-- MaterializeCSS CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <style>
+        body {
+            background-color: #F5F5F5;
+            text-align: center;
+            padding-top: 30px; /* Kurangi padding atas */
+        }
+        .emoji {
+            font-size: 10rem;
+            margin: 10px 0;
+        }
+        .description {
+            font-size: 4rem;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px; /* Tambah jarak antar tombol */
+            margin-top: 30px;
+        }
+
+        .btn-large {
+            width: 300px; /* Sedikit lebih kecil */
+            height: auto;
+            font-size: 2.5rem;
+            padding: 12px;
+        }
+        #result {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 10px; /* Dekatkan ke tombol */
+        }
+    </style>
+
+</head>
+    
+<body>
+    <div class="container">
+        <h4 class="blue-text text-darken-2">Apakah kombinasi ini benar?</h4>
+
+        <h3 id="emojiDisplay" class="emoji"></h3>
+        <p id="descriptionDisplay" class="description"></p>
+        
+        <div class="btn-container">
+            <button class="btn-large green darken-1 white-text waves-effect waves-light" onclick="submitAnswer(true)">Benar ✅</button>
+            <button class="btn-large red darken-1 white-text waves-effect waves-light" onclick="submitAnswer(false)">Salah ✖️</button>
+        </div>
+  
+        <p id="result" class="flow-text blue-text text-darken-4"></p> <!-- Warna biru agar jelas -->
+    </div>
+</body>
+    
+<script>
+    async function loadNextPair() {
+        let response = await fetch("/next");
+        let result = await response.json();
+
+        if (result.finished) {
+            document.getElementById("result").innerText = "Permainan Selesai! Skor Anda: " + result.score;
+            document.getElementById("gameForm").style.display = "none";
+        } else {
+            document.getElementById("emojiDisplay").innerText = result.emoji || "❓";
+            document.getElementById("descriptionDisplay").innerText = result.description || "❓";
+            document.getElementById("result").innerText = ""; // Bersihkan pesan sebelumnya
+        }
+    }
+
+    async function submitAnswer(isTrue) {
+        let response = await fetch("/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_choice: isTrue })
+        });
+
+        let result = await response.json();
+        let resultElement = document.getElementById("result");
+
+        if (result.finished) {
+            resultElement.innerText = "Permainan Selesai! Skor Anda: " + result.score;
+        } else {
+            resultElement.innerText = result.message;
+            resultElement.style.color = result.message.includes("✅") ? "green" : "red"; // ✅ Hijau, ❌ Merah
+            setTimeout(loadNextPair, 1000);
+        }
+    }
+    
+    loadNextPair(); // Load pertanyaan pertama saat halaman dibuka
+</script>
+
+</html>

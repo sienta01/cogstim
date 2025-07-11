@@ -1,0 +1,5 @@
+I want to make a card guessing game. Card will show a series of emoji and its respective description in succesion, and then user needs to guess what emoji is shown on the screen. Each answer true will be rewarded a 10 points. After 10 emojis, the score will be shown.
+
+I have set a windows computer for the server. It has python, pip, flask. I'm planning to host the game online with cloudflare tunnel, but for now i'm going to test it offline. 
+
+For this project i need that user can login and save their score time after time (at least for the last 100 entries or so). This project will be a cognitive stimulation project for people with mild cognitive impairment; therefore i need the features that caregivers can review the patient progress.

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referensi Permainan</title>
+    <style>
+        .emoji {
+            font-size: 2rem; /* Makes the emoji larger */
+            margin-right: 10px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            font-size: 1.5rem; /* Makes the text larger */
+            margin: 10px 0;
+        }
+        button {
+            font-size: 1.5rem;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Referensi: Kombinasi Emoji dan Deskripsi</h2>
+    <ul>
+        {% for pair in emoji_set %}
+            <li><span class="emoji">{{ pair.emoji }}</span> - {{ pair.description }}</li>
+        {% endfor %}
+    </ul>
+    <a href="{{ url_for('game') }}"><button>Mulai Permainan</button></a>
+</body>
+</html>
