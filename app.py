@@ -83,21 +83,32 @@ def add_patient():
     flash("Patient added successfully.")
     return redirect(url_for("dashboard"))
 
+@app.route("/reference")
+def reference():
+    session["reference_shown"] = True
+    return render_template("reference.html", emoji_set=emoji_set)
+
 @app.route("/game")
 def game():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    if not session.get("reference_shown"):
+        return redirect(url_for('reference'))
     session["emoji_queue"] = random.sample(emoji_set, 10)
     session["emoji_index"] = 0
     session["score"] = 0
+    session["reference_shown"] = False
     return render_template('game.html')
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
         user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password_hash, password):
+        if not user:
+            flash("No user found, please register.")
+        elif check_password_hash(user.password_hash, password):
             session["user_id"] = user.id
             return redirect(url_for("dashboard"))
         else:
@@ -116,8 +127,8 @@ def register():
         new_user = User(username=username, password_hash=password_hash)
         db.session.add(new_user)
         db.session.commit()
-        session["user_id"] = new_user.id
-        return redirect(url_for("game"))
+        # After registration, redirect to login page
+        return redirect(url_for("login"))
     return render_template("register.html")
 
 @app.route("/logout")
@@ -224,3 +235,41 @@ def view_patient_scores(patient_id):
     scores = Score.query.filter_by(patient_id=patient.id).order_by(Score.timestamp.desc()).all()
     return render_template("scores.html", scores=scores, patient=patient)
 
+# Edit Patient route
+@app.route("/edit_patient/<int:patient_id>", methods=["GET", "POST"])
+def edit_patient(patient_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
+    if not patient:
+        flash("Patient not found.")
+        return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        patient.name = request.form.get("name")
+        patient.age = request.form.get("age")
+        patient.notes = request.form.get("notes")
+        db.session.commit()
+        flash("Patient updated successfully.")
+        return redirect(url_for("dashboard"))
+    return render_template("edit_patient.html", patient=patient)
+
+# Delete Patient route
+@app.route("/delete_patient/<int:patient_id>")
+def delete_patient(patient_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
+    if not patient:
+        flash("Patient not found.")
+        return redirect(url_for("dashboard"))
+    db.session.delete(patient)
+    db.session.commit()
+    flash("Patient deleted successfully.")
+    return redirect(url_for("dashboard"))
+
+with app.app_context():
+    db.create_all()  # Create database tables if they don't exist
+
+# Run the application for development
+# if __name__ == "__main__":
+#     app.run(debug=True)

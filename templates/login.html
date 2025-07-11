@@ -16,6 +16,15 @@
 <body>
     <div class="login-container">
         <div class="login-title">Login</div>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul id="flash-messages" style="display:none;">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
         <form method="POST">
             <div class="input-field">
                 <input type="text" name="username" id="username" required>
@@ -29,5 +38,16 @@
         </form>
         <a class="register-link" href="{{ url_for('register') }}">Don't have an account? Register</a>
     </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        var flashList = document.getElementById('flash-messages');
+        if (flashList) {
+          for (var i = 0; i < flashList.children.length; i++) {
+            var msg = flashList.children[i].innerText;
+            M.toast({html: msg, displayLength: 4000});
+          }
+        }
+      });
+    </script>
 </body>
 </html>

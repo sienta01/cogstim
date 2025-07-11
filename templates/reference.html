@@ -1,36 +1,40 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Referensi Permainan</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <style>
-        .emoji {
-            font-size: 2rem; /* Makes the emoji larger */
-            margin-right: 10px;
-        }
-        ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        li {
-            font-size: 1.5rem; /* Makes the text larger */
-            margin: 10px 0;
-        }
-        button {
+        body { background: #f5f5f5; }
+        .ref-card { max-width: 600px; margin: 40px auto; padding: 32px 24px; background: #fff; border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.10); }
+        .ref-title { text-align: center; font-size: 2.2rem; margin-bottom: 24px; font-weight: bold; color: #2196F3; }
+        .emoji-list { list-style-type: none; padding: 0; }
+        .emoji-list li { font-size: 1.5rem; margin: 12px 0; display: flex; align-items: center; }
+        .emoji { font-size: 2.5rem; margin-right: 18px; }
+        .start-btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 32px auto 0 auto;
             font-size: 1.5rem;
-            padding: 10px 20px;
-            cursor: pointer;
+            padding: 30px 32px;
+            text-align: center;
+            width: fit-content;
         }
     </style>
 </head>
 <body>
-    <h2>Referensi: Kombinasi Emoji dan Deskripsi</h2>
-    <ul>
-        {% for pair in emoji_set %}
-            <li><span class="emoji">{{ pair.emoji }}</span> - {{ pair.description }}</li>
-        {% endfor %}
-    </ul>
-    <a href="{{ url_for('game') }}"><button>Mulai Permainan</button></a>
+    <div class="ref-card">
+        <div class="ref-title">Referensi: Kombinasi Emoji dan Deskripsi</div>
+        <ul class="emoji-list">
+            {% for pair in emoji_set %}
+                <li><span class="emoji">{{ pair.emoji }}</span> <span>{{ pair.description }}</span></li>
+            {% endfor %}
+        </ul>
+        <a href="{{ url_for('game') }}" class="btn blue start-btn">Mulai Permainan</a>
+    </div>
 </body>
 </html>

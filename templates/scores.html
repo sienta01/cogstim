@@ -1,32 +1,47 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Riwayat Skor</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body { background: #f5f5f5; }
+        .score-card { max-width: 900px; margin: 40px auto; padding: 32px 24px; background: #fff; border-radius: 16px; box-shadow: 0 2px 16px rgba(0,0,0,0.10); }
+        .score-title { text-align: center; font-size: 2.5rem; margin-bottom: 32px; font-weight: bold; color: #2196F3; }
+        .score-table th, .score-table td { font-size: 1.3rem; }
+        .score-table th { background: #2196F3; color: white; cursor:pointer; }
+        .score-table { margin-top: 20px; }
+        .back-btn { margin-top: 30px; display: block; text-align: center; }
+    </style>
 </head>
 <body>
-    <h2>Riwayat Skor</h2>
-    <table id="scoreTable" style="width:80%; margin:auto; font-size:1.5rem; cursor:pointer;">
-        <thead>
-            <tr style="background:#2196F3; color:white;">
-                <th onclick="sortTable(0)">Nama Pasien &#x25B2;&#x25BC;</th>
-                <th onclick="sortTable(1)">Username &#x25B2;&#x25BC;</th>
-                <th onclick="sortTable(2)">Skor &#x25B2;&#x25BC;</th>
-                <th onclick="sortTable(3)">Waktu &#x25B2;&#x25BC;</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for score in scores %}
-            <tr>
-                <td>{% if patient %}{{ patient.name }}{% elif score.patient %}{{ score.patient.name }}{% else %}-{% endif %}</td>
-                <td>{% if score.patient and score.patient.user %}{{ score.patient.user.username }}{% else %}-{% endif %}</td>
-                <td>{{ score.score }}</td>
-                <td>{{ score.timestamp }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="score-card">
+        <div class="score-title">Riwayat Skor</div>
+        <table id="scoreTable" class="score-table highlight centered">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">Nama Pasien &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(1)">Username &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(2)">Skor &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(3)">Waktu &#x25B2;&#x25BC;</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for score in scores %}
+                <tr>
+                    <td>{% if patient %}{{ patient.name }}{% elif score.patient %}{{ score.patient.name }}{% else %}-{% endif %}</td>
+                    <td>{% if score.patient and score.patient.user %}{{ score.patient.user.username }}{% else %}-{% endif %}</td>
+                    <td>{{ score.score }}</td>
+                    <td>{{ score.timestamp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <a href="{{ url_for('dashboard') }}" class="btn blue back-btn">Kembali ke Dashboard</a>
+    </div>
     <script>
     function sortTable(n) {
         var table = document.getElementById("scoreTable");
@@ -67,7 +82,5 @@
         }
     }
     </script>
-    </ul>
-    <a href="{{ url_for('dashboard') }}"><button>Kembali ke Dashboard</button></a>
 </body>
 </html>

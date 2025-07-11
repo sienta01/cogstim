@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Patient</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body { background: #f5f5f5; }
+        .container { margin-top: 40px; }
+        .section-title { font-size: 2rem; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h3 class="section-title">Edit Patient</h3>
+    <form method="POST">
+        <div class="input-field">
+            <input type="text" name="name" value="{{ patient.name }}" required>
+            <label class="active">Patient Name</label>
+        </div>
+        <div class="input-field">
+            <input type="number" name="age" value="{{ patient.age }}">
+            <label class="active">Age</label>
+        </div>
+        <div class="input-field">
+            <textarea name="notes" class="materialize-textarea">{{ patient.notes }}</textarea>
+            <label class="active">Notes</label>
+        </div>
+        <button class="btn orange" type="submit">Save Changes</button>
+        <a href="/dashboard" class="btn grey">Cancel</a>
+    </form>
+</div>
+</body>
+</html>
