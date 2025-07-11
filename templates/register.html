@@ -4,18 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body { background: #f5f5f5; }
+        .register-container { max-width: 400px; margin: 60px auto; padding: 32px 24px; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .register-title { text-align: center; font-size: 2rem; margin-bottom: 24px; font-weight: bold; }
+        .login-link { display: block; text-align: center; margin-top: 18px; }
+    </style>
 </head>
 <body>
-    <h2>Register</h2>
-    <form method="POST">
-        <label>Username:</label>
-        <input type="text" name="username" required>
-        <br>
-        <label>Password:</label>
-        <input type="password" name="password" required>
-        <br>
-        <button type="submit">Register</button>
-    </form>
-    <a href="{{ url_for('login') }}">Already have an account? Login</a>
+    <div class="register-container">
+        <div class="register-title">Register</div>
+        <form method="POST">
+            <div class="input-field">
+                <input type="text" name="username" id="username" required>
+                <label for="username">Username</label>
+            </div>
+            <div class="input-field">
+                <input type="password" name="password" id="password" required>
+                <label for="password">Password</label>
+            </div>
+            <button class="btn green" type="submit" style="width:100%;margin-top:10px;">Register</button>
+        </form>
+        <a class="login-link" href="{{ url_for('login') }}">Already have an account? Login</a>
+    </div>
 </body>
 </html>

@@ -59,7 +59,10 @@ def dashboard():
         return redirect(url_for("login"))
     user = User.query.get(session["user_id"])
     patients = Patient.query.filter_by(user_id=user.id).all() if user else []
-    return render_template("dashboard.html", patients=patients)
+    import datetime
+    now = datetime.datetime.now()
+    username = user.username if user else ""
+    return render_template("dashboard.html", patients=patients, now=now, username=username)
 
 # Add Patient route
 @app.route("/add_patient", methods=["POST"])
@@ -94,7 +97,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password_hash, password):
             session["user_id"] = user.id
-            return redirect(url_for("game"))
+            return redirect(url_for("dashboard"))
         else:
             flash("Username atau password salah.")
     return render_template("login.html")
@@ -169,17 +172,19 @@ def submit():
     session["emoji_index"] += 1  # Pindah ke pertanyaan berikutnya
 
     if session["emoji_index"] >= 10:
-        # Simpan skor ke database
-        new_score = Score(score=session["score"], patient_id=session["selected_patient_id"])
-        db.session.add(new_score)
-        db.session.commit()
+        # Simpan skor ke database untuk selected patient
+        selected_patient_id = session.get("selected_patient_id")
+        if selected_patient_id:
+            new_score = Score(score=session["score"], patient_id=selected_patient_id)
+            db.session.add(new_score)
+            db.session.commit()
         return jsonify({"finished": True, "score": session["score"]})
 
     return jsonify({"message": result_message, "correct_answer": correct_answer})
 
 @app.route("/")
-def reference():
-    return render_template("reference.html", emoji_set=emoji_set)
+def index():
+    return redirect(url_for("dashboard"))
 
 @app.route("/scores")
 def scores():

@@ -14,19 +14,21 @@
     </style>
 </head>
 <body>
+
 <div class="container">
-    <h3 class="section-title">User Registration</h3>
-    <form method="POST" action="/register">
-        <div class="input-field">
-            <input type="text" name="username" required>
-            <label>Username</label>
-        </div>
-        <div class="input-field">
-            <input type="password" name="password" required>
-            <label>Password</label>
-        </div>
-        <button class="btn blue" type="submit">Register</button>
-    </form>
+    <div style="text-align:right; margin-bottom:10px;">
+        <a href="/logout" class="btn red">Logout</a>
+    </div>
+
+    {% set hour = now.hour %}
+    {% if hour < 12 %}
+        {% set greeting = 'Good morning' %}
+    {% elif hour < 18 %}
+        {% set greeting = 'Good afternoon' %}
+    {% else %}
+        {% set greeting = 'Good evening' %}
+    {% endif %}
+    <div class="greeting-message" style="font-size:2.5rem; font-weight:bold; margin-bottom:20px;">{{ greeting }}, {{ username }}!</div>
 
     <hr>
     <h3 class="section-title">Patient Management</h3>
