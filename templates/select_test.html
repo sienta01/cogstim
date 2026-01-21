@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilih Test Kognitif</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+        h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+        .test-card {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .test-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .test-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .test-link {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        .test-link:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            text-decoration: none;
+            color: white;
+        }
+        .back-btn {
+            color: white;
+            text-decoration: none;
+            margin-top: 30px;
+            text-align: center;
+            display: block;
+        }
+        .back-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Pilih Test Kognitif</h2>
+        
+        <div class="test-card">
+            <div class="test-title">🎯 Go/No-Go Test</div>
+            <p class="test-description">
+                Test ini mengukur kemampuan inhibisi (pengendalian diri) dan respons cepat.
+                <br>Anda akan melihat berbagai bentuk dan harus:
+                <br><strong>✓ Tekan/Klik</strong> untuk bentuk yang ditandai (GO)
+                <br><strong>✗ Jangan Tekan/Klik</strong> untuk bentuk lain (NO-GO)
+                <br>Respons harus cepat dan akurat!
+            </p>
+            <a href="/game/go_no_go" class="test-link">Mulai Go/No-Go Test →</a>
+        </div>
+
+        <div class="test-card">
+            <div class="test-title">🎨 Color Stroop Test</div>
+            <p class="test-description">
+                Test ini mengukur fungsi eksekutif dan fokus perhatian.
+                <br>Anda akan melihat nama warna yang TIDAK sesuai dengan warna tulisan.
+                <br>Tugasnya adalah: <strong>Pilih warna tulisan, bukan arti kata!</strong>
+                <br>Contoh: Kata "MERAH" dituliskan dengan warna BIRU → jawab BIRU
+                <br>Test ini menantang karena otak cenderung membaca kata daripada melihat warna.
+            </p>
+            <a href="/game/stroop" class="test-link">Mulai Color Stroop Test →</a>
+        </div>
+
+        <a href="/dashboard" class="back-btn">← Kembali ke Dashboard</a>
+    </div>
+</body>
+</html>

@@ -6,19 +6,26 @@ import random
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
-# Emoji-Description Pairs
-emoji_set = [
-    {"emoji": "😀", "description": "Wajah"},
-    {"emoji": "🚗", "description": "Mobil"},
-    {"emoji": "🍎", "description": "Apel"},
-    {"emoji": "🐶", "description": "Anjing"},
-    {"emoji": "⚽", "description": "Bola"},
-    {"emoji": "🌞", "description": "Matahari"},
-    {"emoji": "📚", "description": "Buku"},
-    {"emoji": "🎸", "description": "Gitar"},
-    {"emoji": "✈️", "description": "Pesawat"},
-    {"emoji": "🎂", "description": "Kue"}
-]
+# Go/No-Go Test Configuration
+GO_SHAPES = ["⭕", "🔷", "🔶"]  # Shapes to press "GO" on
+NO_GO_SHAPES = ["🔺", "✋"]  # Shapes to NOT press
+
+# Color Stroop Test Configuration
+COLORS = ["red", "blue", "green", "yellow", "purple"]
+COLOR_DISPLAY_NAMES = {
+    "red": "MERAH",
+    "blue": "BIRU", 
+    "green": "HIJAU",
+    "yellow": "KUNING",
+    "purple": "UNGU"
+}
+COLOR_HEX = {
+    "red": "#FF0000",
+    "blue": "#0000FF",
+    "green": "#00AA00",
+    "yellow": "#FFFF00",
+    "purple": "#AA00AA"
+}
 
 import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -51,6 +58,9 @@ class Patient(db.Model):
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     score = db.Column(db.Integer, nullable=False)
+    test_type = db.Column(db.String(50), default="emoji")  # 'emoji', 'go_no_go', 'stroop'
+    reaction_time = db.Column(db.Float, nullable=True)  # in milliseconds
+    accuracy = db.Column(db.Float, nullable=True)  # percentage
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
     patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
 
@@ -86,19 +96,62 @@ def add_patient():
 @app.route("/reference")
 def reference():
     session["reference_shown"] = True
-    return render_template("reference.html", emoji_set=emoji_set)
+    return render_template("reference.html")
 
-@app.route("/game")
-def game():
+@app.route("/select_test")
+def select_test():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if not session.get("reference_shown"):
-        return redirect(url_for('reference'))
-    session["emoji_queue"] = random.sample(emoji_set, 10)
-    session["emoji_index"] = 0
+    return render_template("select_test.html")
+
+@app.route("/game/<test_type>")
+def game(test_type):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if test_type not in ['go_no_go', 'stroop']:
+        flash("Invalid test type")
+        return redirect(url_for('select_test'))
+    
+    session["test_type"] = test_type
     session["score"] = 0
-    session["reference_shown"] = False
-    return render_template('game.html')
+    session["correct_count"] = 0
+    session["total_count"] = 0
+    session["trial_index"] = 0
+    
+    if test_type == 'go_no_go':
+        session["go_no_go_trials"] = generate_go_no_go_trials(20)  # 20 trials
+    elif test_type == 'stroop':
+        session["stroop_trials"] = generate_stroop_trials(20)  # 20 trials
+    
+    return render_template('game.html', test_type=test_type)
+
+def generate_go_no_go_trials(num_trials):
+    """Generate random Go/No-Go trials"""
+    trials = []
+    for _ in range(num_trials):
+        is_go = random.choice([True, False])
+        if is_go:
+            shape = random.choice(GO_SHAPES)
+        else:
+            shape = random.choice(NO_GO_SHAPES)
+        trials.append({
+            "shape": shape,
+            "is_go": is_go
+        })
+    return trials
+
+def generate_stroop_trials(num_trials):
+    """Generate Stroop color word trials - word color doesn't match word meaning"""
+    trials = []
+    for _ in range(num_trials):
+        word_color = random.choice(COLORS)  # What color the word is displayed in
+        word_meaning = random.choice([c for c in COLORS if c != word_color])  # The word itself (mismatched)
+        trials.append({
+            "word": COLOR_DISPLAY_NAMES[word_meaning],
+            "display_color": COLOR_HEX[word_color],
+            "correct_answer": word_color  # User should respond to color, not word meaning
+        })
+    return trials
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -137,35 +190,37 @@ def logout():
     return redirect(url_for("login"))
 
 @app.route("/next")
-def next_pair():
-    # Pastikan sesi sudah memiliki emoji_queue
-    if "emoji_queue" not in session:
-        session["emoji_queue"] = random.sample(emoji_set, 10)  # Acak 10 pasangan emoji-deskripsi
-        session["emoji_index"] = 0
-        session["score"] = 0  # Reset skor setiap permainan baru
-
-    if session["emoji_index"] >= len(session["emoji_queue"]):
-        return jsonify({"finished": True, "score": session["score"]})
-
-    # Ambil pasangan emoji yang sedang dimainkan
-    current_pair = session["emoji_queue"][session["emoji_index"]]
-
-    # Tentukan apakah kombinasi ini benar atau salah
-    is_correct = random.choice([True, False])
-    session["current_correct"] = is_correct
-
-    if is_correct:
-        description = current_pair["description"]  # Gunakan deskripsi yang benar
-    else:
-        # Pilih deskripsi yang salah
-        wrong_pair = random.choice([e for e in emoji_set if e["emoji"] != current_pair["emoji"]])
-        description = wrong_pair["description"]
-
-    return jsonify({
-        "finished": False,
-        "emoji": current_pair["emoji"],
-        "description": description
-    })
+def next_trial():
+    """Get next trial for the current test"""
+    test_type = session.get("test_type")
+    trial_index = session.get("trial_index", 0)
+    
+    if test_type == 'go_no_go':
+        trials = session.get("go_no_go_trials", [])
+        if trial_index >= len(trials):
+            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
+        
+        trial = trials[trial_index]
+        return jsonify({
+            "finished": False,
+            "shape": trial["shape"],
+            "is_go_trial": trial["is_go"]
+        })
+    
+    elif test_type == 'stroop':
+        trials = session.get("stroop_trials", [])
+        if trial_index >= len(trials):
+            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
+        
+        trial = trials[trial_index]
+        return jsonify({
+            "finished": False,
+            "word": trial["word"],
+            "display_color": trial["display_color"],
+            "correct_answer": trial["correct_answer"]
+        })
+    
+    return jsonify({"finished": True, "error": "Invalid test type"})
 
 @app.route("/submit", methods=["POST"])
 def submit():
@@ -173,27 +228,80 @@ def submit():
         return redirect(url_for("login"))
 
     data = request.get_json()
-    user_choice = data["user_choice"]  # Jawaban dari user (True atau False)
-    correct_answer = session.get("current_correct", False)  # Ambil jawaban benar dari session
-
-    if user_choice == correct_answer:
-        session["score"] += 10  # Tambah skor jika jawaban benar
-        result_message = "✅ Benar!"
+    test_type = session.get("test_type")
+    trial_index = session.get("trial_index", 0)
+    
+    if test_type == 'go_no_go':
+        trials = session.get("go_no_go_trials", [])
+        if trial_index >= len(trials):
+            return jsonify({"finished": True})
+        
+        trial = trials[trial_index]
+        user_action = data.get("action")  # "go", "nogo", or "nogo_timeout"
+        expected_action = "go" if trial["is_go"] else "nogo"
+        
+        # Handle timeout (no response = nogo)
+        if user_action == "nogo_timeout":
+            user_action = "nogo"
+        
+        is_correct = user_action == expected_action
+        session["total_count"] += 1
+        if is_correct:
+            session["correct_count"] += 1
+            session["score"] += 10
+            result_message = "✅ Benar!"
+        else:
+            result_message = "❌ Salah!"
+    
+    elif test_type == 'stroop':
+        trials = session.get("stroop_trials", [])
+        if trial_index >= len(trials):
+            return jsonify({"finished": True})
+        
+        trial = trials[trial_index]
+        user_answer = data.get("answer")  # The color user selected
+        correct_answer = trial["correct_answer"]
+        
+        is_correct = user_answer == correct_answer
+        session["total_count"] += 1
+        if is_correct:
+            session["correct_count"] += 1
+            session["score"] += 10
+            result_message = "✅ Benar!"
+        else:
+            result_message = "❌ Salah!"
+    
     else:
-        result_message = "❌ Salah!"
-
-    session["emoji_index"] += 1  # Pindah ke pertanyaan berikutnya
-
-    if session["emoji_index"] >= 10:
-        # Simpan skor ke database untuk selected patient
+        return jsonify({"error": "Invalid test type"})
+    
+    session["trial_index"] += 1
+    
+    # Check if finished
+    if session["trial_index"] >= (len(trials) if test_type == 'go_no_go' else len(session.get("stroop_trials", []))):
+        # Save score to database
         selected_patient_id = session.get("selected_patient_id")
         if selected_patient_id:
-            new_score = Score(score=session["score"], patient_id=selected_patient_id)
+            accuracy = (session["correct_count"] / session["total_count"] * 100) if session["total_count"] > 0 else 0
+            new_score = Score(
+                score=session["score"],
+                test_type=test_type,
+                accuracy=accuracy,
+                patient_id=selected_patient_id
+            )
             db.session.add(new_score)
             db.session.commit()
-        return jsonify({"finished": True, "score": session["score"]})
-
-    return jsonify({"message": result_message, "correct_answer": correct_answer})
+        
+        return jsonify({
+            "finished": True,
+            "score": session["score"],
+            "correct": session["correct_count"],
+            "total": session["total_count"]
+        })
+    
+    return jsonify({
+        "message": result_message,
+        "is_correct": is_correct
+    })
 
 @app.route("/")
 def index():
@@ -221,7 +329,7 @@ def select_patient(patient_id):
         return redirect(url_for("dashboard"))
     session["selected_patient_id"] = patient.id
     session["selected_patient_name"] = patient.name
-    return redirect(url_for("game"))
+    return redirect(url_for("select_test"))
 
 # View Patient Scores route
 @app.route("/view_patient_scores/<int:patient_id>")
@@ -271,5 +379,5 @@ with app.app_context():
     db.create_all()  # Create database tables if they don't exist
 
 # Run the application for development
-# if __name__ == "__main__":
-#     app.run(debug=True)
+if __name__ == "__main__":
+    app.run(debug=True)

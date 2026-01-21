@@ -24,18 +24,28 @@
             <thead>
                 <tr>
                     <th onclick="sortTable(0)">Nama Pasien &#x25B2;&#x25BC;</th>
-                    <th onclick="sortTable(1)">Username &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(1)">Test Type &#x25B2;&#x25BC;</th>
                     <th onclick="sortTable(2)">Skor &#x25B2;&#x25BC;</th>
-                    <th onclick="sortTable(3)">Waktu &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(3)">Akurasi &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(4)">Waktu &#x25B2;&#x25BC;</th>
                 </tr>
             </thead>
             <tbody>
                 {% for score in scores %}
                 <tr>
                     <td>{% if patient %}{{ patient.name }}{% elif score.patient %}{{ score.patient.name }}{% else %}-{% endif %}</td>
-                    <td>{% if score.patient and score.patient.user %}{{ score.patient.user.username }}{% else %}-{% endif %}</td>
+                    <td>
+                        {% if score.test_type == 'go_no_go' %}
+                            🎯 Go/No-Go
+                        {% elif score.test_type == 'stroop' %}
+                            🎨 Stroop
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>{{ score.score }}</td>
-                    <td>{{ score.timestamp }}</td>
+                    <td>{% if score.accuracy %}{{ "%.1f"|format(score.accuracy) }}%{% else %}-{% endif %}</td>
+                    <td>{{ score.timestamp.strftime('%Y-%m-%d %H:%M:%S') if score.timestamp else '-' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
