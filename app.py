@@ -7,8 +7,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Go/No-Go Test Configuration
-GO_SHAPES = ["⭕", "🔷", "🔶"]  # Shapes to press "GO" on
-NO_GO_SHAPES = ["🔺", "✋"]  # Shapes to NOT press
+GO_SHAPES = ["TEKAN"]  # Text button for GO action
+NO_GO_SHAPES = ["JANGAN TEKAN"]  # Text button for NO-GO action
 
 # Color Stroop Test Configuration
 COLORS = ["red", "blue", "green", "yellow", "purple"]
@@ -248,7 +248,7 @@ def submit():
         session["total_count"] += 1
         if is_correct:
             session["correct_count"] += 1
-            session["score"] += 10
+            session["score"] += 5
             result_message = "✅ Benar!"
         else:
             result_message = "❌ Salah!"
@@ -266,7 +266,7 @@ def submit():
         session["total_count"] += 1
         if is_correct:
             session["correct_count"] += 1
-            session["score"] += 10
+            session["score"] += 5
             result_message = "✅ Benar!"
         else:
             result_message = "❌ Salah!"
@@ -296,6 +296,15 @@ def submit():
             "score": session["score"],
             "correct": session["correct_count"],
             "total": session["total_count"]
+        })
+    
+    # For Stroop test, include user answer and correct answer in feedback
+    if test_type == 'stroop':
+        return jsonify({
+            "message": result_message,
+            "is_correct": is_correct,
+            "user_answer": user_answer,
+            "correct_answer": correct_answer
         })
     
     return jsonify({
