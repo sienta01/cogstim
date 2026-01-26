@@ -98,11 +98,23 @@ def reference():
     session["reference_shown"] = True
     return render_template("reference.html")
 
+@app.route("/test_instructions/<test_type>")
+def test_instructions(test_type):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if test_type not in ['go_no_go', 'stroop']:
+        flash("Invalid test type")
+        return redirect(url_for('dashboard'))
+    return render_template('test_instructions.html', test_type=test_type)
+
 @app.route("/select_test")
 def select_test():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template("select_test.html")
+    # Initialize test sequence
+    session["completed_tests"] = []
+    session["test_scores"] = {}
+    return redirect(url_for("test_instructions", test_type="go_no_go"))
 
 @app.route("/game/<test_type>")
 def game(test_type):
@@ -110,7 +122,7 @@ def game(test_type):
         return redirect(url_for('login'))
     if test_type not in ['go_no_go', 'stroop']:
         flash("Invalid test type")
-        return redirect(url_for('select_test'))
+        return redirect(url_for('dashboard'))
     
     session["test_type"] = test_type
     session["score"] = 0
@@ -262,7 +274,12 @@ def submit():
         user_answer = data.get("answer")  # The color user selected
         correct_answer = trial["correct_answer"]
         
-        is_correct = user_answer == correct_answer
+        # Handle timeout (no response)
+        if user_answer == "timeout":
+            is_correct = False
+        else:
+            is_correct = user_answer == correct_answer
+        
         session["total_count"] += 1
         if is_correct:
             session["correct_count"] += 1
@@ -278,6 +295,15 @@ def submit():
     
     # Check if finished
     if session["trial_index"] >= (len(trials) if test_type == 'go_no_go' else len(session.get("stroop_trials", []))):
+        # Store current test results
+        test_scores = session.get("test_scores", {})
+        test_scores[test_type] = {
+            "score": session["score"],
+            "correct_count": session["correct_count"],
+            "total_count": session["total_count"]
+        }
+        session["test_scores"] = test_scores
+        
         # Save score to database
         selected_patient_id = session.get("selected_patient_id")
         if selected_patient_id:
@@ -291,26 +317,53 @@ def submit():
             db.session.add(new_score)
             db.session.commit()
         
-        return jsonify({
-            "finished": True,
-            "score": session["score"],
-            "correct": session["correct_count"],
-            "total": session["total_count"]
-        })
+        # Check if both tests are completed
+        completed_tests = session.get("completed_tests", [])
+        completed_tests.append(test_type)
+        session["completed_tests"] = completed_tests
+        
+        if test_type == 'go_no_go' and 'stroop' not in completed_tests:
+            # Go/No-Go finished, proceed to Stroop
+            return jsonify({
+                "finished": True,
+                "next_test": "stroop",
+                "redirect_url": "/game/stroop"
+            })
+        else:
+            # Both tests finished, show final results
+            return jsonify({
+                "finished": True,
+                "final_results": True,
+                "all_scores": test_scores
+            })
     
     # For Stroop test, include user answer and correct answer in feedback
     if test_type == 'stroop':
-        return jsonify({
-            "message": result_message,
-            "is_correct": is_correct,
-            "user_answer": user_answer,
-            "correct_answer": correct_answer
-        })
+        # For timeout, don't include user_answer in response
+        if user_answer == "timeout":
+            return jsonify({
+                "message": result_message,
+                "is_correct": is_correct,
+                "correct_answer": correct_answer
+            })
+        else:
+            return jsonify({
+                "message": result_message,
+                "is_correct": is_correct,
+                "user_answer": user_answer,
+                "correct_answer": correct_answer
+            })
     
     return jsonify({
         "message": result_message,
         "is_correct": is_correct
     })
+
+@app.route("/test_results")
+def test_results():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    return render_template('test_results.html')
 
 @app.route("/")
 def index():

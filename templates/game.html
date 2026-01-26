@@ -298,7 +298,7 @@
             <div class="go-no-go-buttons">
                 <button class="tombol-btn" id="tombolButton" onclick="submitGoNoGo('go')">TOMBOL</button>
             </div>
-            <p id="result" class="result-message"></p>
+            <p id="resultGoNoGo" class="result-message"></p>
         </div>
 
         <!-- Stroop Test -->
@@ -306,7 +306,7 @@
             <p style="font-size: 1.1rem; color: #666; margin-bottom: 20px;">Pilih warna TULISAN, bukan arti kata!</p>
             <div class="stroop-word" id="stroopWord"></div>
             <div class="color-buttons" id="colorButtons"></div>
-            <p id="result" class="result-message"></p>
+            <p id="resultStroop" class="result-message"></p>
         </div>
 
         <!-- Final Results -->
@@ -346,9 +346,14 @@
             
             if (timeRemaining <= 0) {
                 clearInterval(trialTimer);
-                // Auto-advance if no response (no-go scenario)
-                if (!responseGiven && testType === 'go_no_go') {
-                    submitGoNoGo('nogo_timeout');
+                // Auto-advance if no response
+                if (!responseGiven) {
+                    if (testType === 'go_no_go') {
+                        submitGoNoGo('nogo_timeout');
+                    } else if (testType === 'stroop') {
+                        // Auto-submit as incorrect for Stroop
+                        submitStroop('timeout');
+                    }
                 }
             }
         }, 100);
@@ -368,7 +373,11 @@
 
     async function loadNextTrial() {
         responseGiven = false;
-        document.getElementById("result").innerText = "";
+        // Clear both result elements
+        const resultGoNoGo = document.getElementById("resultGoNoGo");
+        const resultStroop = document.getElementById("resultStroop");
+        if (resultGoNoGo) resultGoNoGo.innerText = "";
+        if (resultStroop) resultStroop.innerText = "";
         stopTrialTimer();
         
         // Disable buttons at start
@@ -467,6 +476,11 @@
     async function submitStroop(colorAnswer) {
         if (responseGiven) return;
         responseGiven = true;
+        stopTrialTimer();
+        
+        // Disable all color buttons after response
+        const buttons = document.querySelectorAll('.color-btn');
+        buttons.forEach(btn => btn.disabled = true);
         
         let response = await fetch("/submit", {
             method: "POST",
@@ -479,10 +493,23 @@
     }
 
     function handleResponse(result) {
-        let resultElement = document.getElementById("result");
+        // Get the appropriate result element based on test type
+        let resultElement = testType === 'go_no_go' 
+            ? document.getElementById("resultGoNoGo") 
+            : document.getElementById("resultStroop");
 
         if (result.finished) {
-            showFinalResults(result);
+            if (result.final_results) {
+                // Both tests finished, redirect to final results
+                const resultsJSON = encodeURIComponent(JSON.stringify(result.all_scores));
+                window.location.href = `/test_results?results=${resultsJSON}`;
+            } else if (result.next_test === 'stroop') {
+                // Go/No-Go finished, proceed to Stroop instructions
+                window.location.href = `/test_instructions/stroop`;
+            } else {
+                // Fallback to final results
+                window.location.href = `/test_results`;
+            }
         } else {
             if (result.is_correct) {
                 resultElement.innerHTML = "✅ Benar!";
@@ -493,7 +520,7 @@
             }
             
             // Add feedback for Stroop test showing user answer and correct answer
-            if (result.user_answer && result.correct_answer) {
+            if (result.correct_answer) {
                 const colorNames = {
                     "red": "MERAH",
                     "blue": "BIRU",
@@ -501,9 +528,15 @@
                     "yellow": "KUNING",
                     "purple": "UNGU"
                 };
-                const userColorName = colorNames[result.user_answer];
                 const correctColorName = colorNames[result.correct_answer];
-                resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Jawaban: ${userColorName} | Benar: ${correctColorName}</small>`;
+                
+                if (result.user_answer) {
+                    const userColorName = colorNames[result.user_answer];
+                    resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Jawaban: ${userColorName} | Benar: ${correctColorName}</small>`;
+                } else {
+                    // Timeout case - no user answer
+                    resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Waktu habis | Benar: ${correctColorName}</small>`;
+                }
             }
             
             setTimeout(loadNextTrial, 1500);
