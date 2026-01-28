@@ -2,13 +2,14 @@
 
 ## What Was Changed
 
-Your Cognitive Stimulation app has been successfully refactored from an emoji-matching game to include two professional cognitive assessment tests:
+Your Cognitive Stimulation app has been refactored into a multi-test cognitive assessment suite that includes three tests:
 
 ### 🎯 **Go/No-Go Test**
 - Measures response inhibition and impulse control
 - Users click "TEKAN GO" button for GO shapes (⭕🔷🔶), wait for NO-GO shapes (🔺✋)
-- 20 trials, max 200 points
-- Quick test (20-40 seconds)
+-- 10 trials (main), max 100 points
+-- Practice: 3 trials
+-- Quick test (~30-60 seconds)
 
 ### 🎨 **Color Stroop Test**
 - Measures executive function and selective attention
@@ -33,7 +34,7 @@ Your Cognitive Stimulation app has been successfully refactored from an emoji-ma
 - ✅ Completely rewrote `/submit` route for new tests
 - ✅ Updated `/select_patient` to redirect to test selection
 
-### 2. **templates/game.html** (Test Interface - 200 lines)
+### 2. **templates/game.html** (Test Interface - updated)
 **Changes:**
 - ✅ Completely redesigned for both test types
 - ✅ Added progress bar showing test progress
@@ -55,8 +56,8 @@ Your Cognitive Stimulation app has been successfully refactored from an emoji-ma
 
 ## Files Created (New Templates)
 
-### 4. **templates/select_test.html** (NEW - 70 lines)
-- Beautiful test selection interface
+- **templates/select_test.html** (NEW - 70 lines)
+- Test selection interface (note: current flow initializes sequence and redirects to instructions)
 - Descriptions for each test
 - Gradient design with cards
 - Direct links to start tests
@@ -278,5 +279,5 @@ For detailed information:
 All changes have been implemented successfully!
 The app is ready to test with the new Go/No-Go and Color Stroop cognitive assessment tests.
 
-**Last Updated**: January 21, 2026
-**Version**: 2.0 (Cognitive Tests Edition)
+**Last Updated**: January 29, 2026
+**Version**: 2.2.0

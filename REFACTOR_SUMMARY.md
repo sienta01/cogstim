@@ -1,9 +1,10 @@
 # Cognitive Stimulation App - Refactor Summary
 
 ## Overview
-The app has been successfully refactored to replace the emoji-description matching test with two new cognitive assessment tests:
-1. **Go/No-Go Test** - Measures inhibition and response control
-2. **Color Stroop Test** - Measures executive function and attention
+The app has been refactored into a small cognitive assessment suite. It now includes:
+1. **Go/No-Go Test** - Measures inhibition and response control (default 10 trials)
+2. **Color Stroop Test** - Measures executive function and attention (20 trials)
+3. **Emoji Matching Test** - Re-introduced as a quick associative matching task (10 trials)
 
 ---
 
@@ -21,15 +22,16 @@ The app has been successfully refactored to replace the emoji-description matchi
   - `accuracy`: Percentage of correct responses
   - `reaction_time`: Optional field for future reaction time tracking
 
-#### New Routes:
-1. `/select_test` - Displays test selection page
-2. `/game/<test_type>` - Initializes the selected test (go_no_go or stroop)
+#### New / Updated Routes:
+1. `/select_test` - Initializes the session test sequence and redirects to the first instruction page (current default flow redirects to `/test_instructions/go_no_go`)
+2. `/game/<test_type>` - Initializes the selected test (supports `go_no_go`, `stroop`, and `emoji`)
 3. `/next` - Returns next trial for the current test
-4. `/submit` - Processes test responses
+4. `/submit` - Processes test responses and handles sequencing between tests
 
 #### Trial Generation Functions:
-- `generate_go_no_go_trials(num_trials)`: Creates random GO/NO-GO sequences
+- `generate_go_no_go_trials(num_trials)`: Creates randomized GO/NO-GO sequences (limits consecutive identical types)
 - `generate_stroop_trials(num_trials)`: Creates Stroop trials with mismatched word/color pairs
+- `generate_emoji_trials(num_trials)`: Generates emoji-description trials with balanced match/non-match pairs
 
 #### Updated Routes:
 - `/select_patient/<patient_id>`: Now redirects to `/select_test` instead of directly to game
@@ -73,12 +75,13 @@ Patient Selection → Test Selection → Test (Go/No-Go or Stroop) → Results
 
 ## Test Specifications
 
-### Go/No-Go Test (20 trials)
+### Go/No-Go Test (10 trials)
 - **GO Shapes**: ⭕ (circle), 🔷 (diamond), 🔶 (orange circle)
 - **NO-GO Shapes**: 🔺 (triangle), ✋ (hand)
 - **User Action**: Click "TEKAN GO" button for GO shapes, don't click for NO-GO shapes
-- **Scoring**: 10 points per correct response
-- **Measures**: Response inhibition, impulse control
+-- **Scoring**: 10 points per correct response
+-- **Measures**: Response inhibition, impulse control
+-- **Notes**: Default main run uses 10 trials (practice runs use 3). Stimulus generator prevents long runs of identical trial types (max 5 in succession).
 
 ### Color Stroop Test (20 trials)
 - **Structure**: Word displayed in different color than its meaning

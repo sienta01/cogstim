@@ -20,7 +20,7 @@
 - This patient's data will be used to save test scores
 
 #### Step 2: Choose Test Type
-You'll see two test options:
+You'll see three test options, or you may run the default full sequence (Go/No-Go → Stroop → Emoji Matching). Practice rounds are available before the main test.
 
 ##### 🎯 **Go/No-Go Test**
 - **What it measures**: Response inhibition and impulse control
@@ -29,8 +29,10 @@ You'll see two test options:
   - For GO shapes (⭕ circle, 🔷 diamond, 🔶 orange): Click the **"TEKAN GO"** button
   - For NO-GO shapes (🔺 triangle, ✋ hand): **Don't click** - wait for next shape
   - Respond as quickly and accurately as possible
-- **Duration**: 20 trials (approximately 1-2 minutes)
-- **Scoring**: 10 points per correct response
+-- **Duration**: ~30-60 seconds
+-- **Trials**: 10 (practice: 3)
+-- **Scoring**: 10 points per correct response
+-- **Notes**: Consecutive identical stimuli are limited to prevent streaks (max 5)
 
 ##### 🎨 **Color Stroop Test**
 - **What it measures**: Executive function and attention control
@@ -39,27 +41,28 @@ You'll see two test options:
   - Example: The word "MERAH" (red) appears in BLUE color
   - **Click the button that matches the TEXT COLOR, NOT the word meaning**
   - In the example above, you would click the BLUE button
-- **Duration**: 20 trials (approximately 2-3 minutes)
-- **Scoring**: 10 points per correct response
+-- **Duration**: ~60-150 seconds
+-- **Trials**: 20 (practice: 3)
+-- **Scoring**: 10 points per correct response
 
 #### Step 3: Complete Test
-- The progress bar at the top shows your progress
-- After each response, you'll see feedback: ✅ Correct or ❌ Incorrect
-- After all 20 trials complete, you'll see:
-  - Final Score
-  - Accuracy Percentage
-  - Number of Correct Answers
+The progress bar at the top shows your progress
+After each response, you'll see feedback: ✅ Correct or ❌ Incorrect
+After the full sequence completes (or after the selected test), you'll see:
+- Final Score per test
+- Accuracy Percentage
+- Number of Correct Answers
 
 #### Step 4: View Results
 - Click **"Lihat Semua Skor"** (View All Scores) to see test history
 - Click **"Kembali ke Dashboard"** to return and select another patient
 
 ### 4. Viewing Score History
-- From dashboard: Click **"View Score"** next to a patient to see their scores only
+- From dashboard: Click **View Score** next to a patient to see their scores only
 - Or click the **Scores** menu to see all your patients' scores
 - Scores show:
   - Patient name
-  - Test type (Go/No-Go or Stroop)
+  - Test type (Go/No-Go, Stroop, or Emoji)
   - Score achieved
   - Accuracy percentage
   - Date and time

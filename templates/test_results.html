@@ -162,7 +162,7 @@
         <div class="completion-title">Semua Test Selesai!</div>
         
         <div class="summary-text">
-            Anda telah menyelesaikan kedua test kognitif.<br>
+            Anda telah menyelesaikan ketiga test kognitif.<br>
             Skor dan akurasi Anda telah tersimpan dalam sistem.
         </div>
 
@@ -198,8 +198,9 @@
             container.innerHTML = '';
 
             const testInfo = {
-                'go_no_go': { emoji: '🎯', name: 'Go/No-Go' },
-                'stroop': { emoji: '🎨', name: 'Color Stroop' }
+                'go_no_go': { emoji: '🎯', name: 'Tes Kecekatan' },
+                'stroop': { emoji: '🎨', name: 'Tes Warna Stroop' },
+                'emoji': { emoji: '🎭', name: 'Tes Pencocokan Emoji' }
             };
 
             for (const [testType, scores] of Object.entries(results)) {

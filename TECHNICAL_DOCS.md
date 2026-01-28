@@ -36,13 +36,13 @@ class Patient(db.Model):
 ### Score Model
 ```python
 class Score(db.Model):
-    id: Integer (Primary Key)
-    score: Integer (Required)
-    test_type: String (Default: "emoji") # 'go_no_go', 'stroop'
-    reaction_time: Float (Optional, milliseconds)
-    accuracy: Float (Optional, percentage)
-    timestamp: DateTime (Auto-set to current time)
-    patient_id: Integer (Foreign Key → Patient)
+  id: Integer (Primary Key)
+  score: Integer (Required)
+  test_type: String (e.g. 'go_no_go', 'stroop', 'emoji')
+  reaction_time: Float (Optional, milliseconds)
+  accuracy: Float (Optional, percentage)
+  timestamp: DateTime (Auto-set to current time)
+  patient_id: Integer (Foreign Key → Patient)
 ```
 
 ---
@@ -95,34 +95,39 @@ class Score(db.Model):
 
 #### GET `/select_test`
 - **Requires**: user_id in session
-- **Returns**: select_test.html (test selection interface)
+- **Action**: Initializes test sequence (clears `completed_tests` and `test_scores`) and redirects to the first instruction page by default. In current flow this redirects to `/test_instructions/go_no_go` rather than rendering a selection template.
 
 #### GET `/game/<test_type>`
-- **Parameters**: test_type ('go_no_go' or 'stroop')
+- **Parameters**: test_type ('go_no_go', 'stroop', or 'emoji')
 - **Requires**: user_id, selected_patient_id in session
-- **Action**: Initializes test by generating trials
+- **Action**: Initializes test by generating trials (or practice trials) and sets session state
 - **Session vars set**:
   - test_type
   - score (0)
   - correct_count (0)
   - total_count (0)
   - trial_index (0)
-  - go_no_go_trials OR stroop_trials (array)
+  - total_trials (int) — number of trials for this run (practice/main)
+  - go_no_go_trials OR stroop_trials OR emoji_trials (array)
+  - practice_mode (bool) — true for practice runs
+  - completed_tests (list) — tests already finished in this session
 
 #### GET `/next`
 - **Returns**: JSON with next trial data
 - **Response formats**:
   - **Go/No-Go**: `{ "shape": str, "is_go_trial": bool, "finished": bool }`
   - **Stroop**: `{ "word": str, "display_color": hex, "correct_answer": str, "finished": bool }`
+  - **Emoji**: `{ "emoji": str, "description": str, "is_match": bool, "finished": bool }`
 
 #### POST `/submit`
 - **Body**: JSON with user response
 - **Go/No-Go**: `{ "action": "go" | "no_go" }`
 - **Stroop**: `{ "answer": "red" | "blue" | "green" | "yellow" | "purple" }`
+- **Emoji**: `{ "choice": true | false }` (whether description matches emoji)
 - **Returns**: 
   - During test: `{ "message": str, "is_correct": bool }`
-  - On completion: `{ "finished": true, "score": int, "correct": int, "total": int }`
-- **Side effects**: Saves Score to database when test completes
+  - On completion: `{ "finished": true, "score": int, "correct": int, "total": int, "next_test": str }`
+- **Side effects**: Saves Score to database when a test completes. Flow control may redirect client to `/test_instructions/<next_test>` depending on sequence.
 
 ### Score/History Routes
 
@@ -158,7 +163,8 @@ def generate_go_no_go_trials(num_trials):
     # Returns array of {shape, is_go} objects
     # GO_SHAPES = ["⭕", "🔷", "🔶"]
     # NO_GO_SHAPES = ["🔺", "✋"]
-    # Randomly selects shape type (50% go, 50% no-go)
+  # Randomly selects shape type (approximate 50% go, 50% no-go)
+  # Ensures no more than N identical stimulus types in succession (default max 5)
 ```
 
 ### Stroop Trial Generation
@@ -169,6 +175,15 @@ def generate_stroop_trials(num_trials):
     # display_color = COLOR_HEX[color] (RGB hex value)
     # correct_answer = color (the displayed color, not word meaning)
     # Ensures word color ≠ word meaning (always mismatch)
+```
+
+### Emoji Trial Generation
+```python
+def generate_emoji_trials(num_trials):
+  # Returns array of {emoji, description, is_match} objects
+  # EMOJI_SET = list of (emoji, correct_description)
+  # For each trial, randomly choose whether to present a matching or mismatched description
+  # Ensure trials are balanced and randomized
 ```
 
 ---
@@ -182,12 +197,16 @@ def generate_stroop_trials(num_trials):
 | user_id | int | Current logged-in user |
 | selected_patient_id | int | Patient for score recording |
 | selected_patient_name | str | Patient display name |
-| test_type | str | 'go_no_go' or 'stroop' |
+| test_type | str | 'go_no_go', 'stroop', or 'emoji' |
 | score | int | Current accumulated score |
 | correct_count | int | Number of correct responses |
 | total_count | int | Total trials attempted |
 | trial_index | int | Current trial number (0-19) |
 | go_no_go_trials | list | Array of GO/NO-GO trials |
+| stroop_trials | list | Array of Stroop trials |
+| emoji_trials | list | Array of Emoji trials |
+| practice_mode | bool | Whether this run is a practice session |
+| total_trials | int | Number of trials in current run |
 | stroop_trials | list | Array of Stroop trials |
 
 ---

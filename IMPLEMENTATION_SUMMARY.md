@@ -52,52 +52,67 @@ Total Changes: 300+ lines of new code
 ```
 
 ### Feature Expansion
-```
-Tests Available:
+Your Cognitive Stimulation application has been successfully refactored to include three professional cognitive assessment tests: **Go/No-Go Test**, **Color Stroop Test**, and **Emoji Matching Test**.
   Before: 1 (emoji matching)
   After: 2 (Go/No-Go + Stroop)
   Increase: +100%
 
 Trials:
+| Emoji Matching Test | ✅ Complete | 10 trials, associative matching testing |
   Before: 10 per test
   After: 20 per test
-  Increase: +100%
-
-Max Score:
+Backend (app.py):
+  - Original: 275 lines
+  - Updated: 520+ lines (feature additions)
+  - Change: +245+ lines (approx.)
   Before: 100 points
   After: 200 points per test
-  Increase: +100%
-
+Tests Available:
+  Before: 1 (emoji matching)
+  After: 3 (Go/No-Go, Stroop, Emoji Matching)
 Data Tracked:
-  Before: 1 field (score)
-  After: 4+ fields (score, type, accuracy, time)
-  Increase: +300%
+Trials:
+  Before: 10 per test
+  After: Variable (Go/No-Go: 10, Stroop: 20, Emoji: 10)
+  Notes: Practice rounds use 3 trials per test
+```
+### Go/No-Go Test
+```
+Purpose:      Response inhibition and impulse control
+Trials:       10 (practice: 3)
+Duration:     ~30-60 seconds
+Max Score:    100 points
+GO Shapes:    ⭕ 🔷 🔶 (user clicks button)
+NO-GO Shapes: 🔺 ✋ (user waits)
+Response:     Binary (go or no-go)
+Notes:        Consecutive identical stimuli limited to 5
+Domain:       Executive function - inhibition
+```
+- [x] JavaScript logic review
+```
+Purpose:      Executive function and selective attention
+Trials:       20 (practice: 3)
+Duration:     ~60-150 seconds
+Max Score:    200 points
+Colors:       Red, Blue, Green, Yellow, Purple
+Display:      100% word-color mismatch
+Response:     Select text color (not word meaning)
+Domain:       Executive function - cognitive flexibility
 ```
 
 ---
 
-## 🧪 Testing Completed
-
-### ✅ Validation Tests
-- [x] Python syntax validation (py_compile)
-- [x] Module import verification
-- [x] Database model compatibility
-- [x] HTML template validation
-- [x] CSS styling validation
-- [x] JavaScript logic review
-
-### ✅ Functional Tests
-- [x] User authentication flow
-- [x] Patient management operations
-- [x] Test selection interface
-- [x] Go/No-Go test logic
-- [x] Stroop test logic
-- [x] Score calculation
-- [x] Database persistence
-- [x] Score history retrieval
-
+### Emoji Matching Test
+```
+Purpose:      Associative matching (emoji to short description)
+Trials:       10 (practice: 3)
+Duration:     ~20-40 seconds
+Max Score:    100 points
+Task:         Identify whether textual description matches the displayed emoji (True/False)
+Response:     Binary (match / not match)
+```
 ### ✅ User Experience Tests
-- [x] Mobile responsiveness
+### Three-Layer Architecture
 - [x] Animation smoothness
 - [x] UI clarity and intuitiveness
 - [x] Error message clarity

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siap Memulai</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .ready-container {
+            background: white;
+            border-radius: 15px;
+            padding: 60px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .ready-icon {
+            font-size: 5rem;
+            margin-bottom: 30px;
+        }
+
+        .ready-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .ready-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .ready-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 20px 60px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            margin-top: 20px;
+        }
+
+        .ready-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+        }
+
+        .practice-summary {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .practice-summary h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .practice-summary ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .practice-summary li {
+            color: #666;
+            margin: 8px 0;
+        }
+
+        .tips-section {
+            background: #e8f5e9;
+            border-left: 4px solid #00c853;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .tips-section h5 {
+            color: #00c853;
+            margin-top: 0;
+        }
+
+        .tips-section ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .tips-section li {
+            color: #333;
+            margin: 6px 0;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="ready-container">
+        <div class="ready-icon">
+            🎯
+        </div>
+        
+        <div class="ready-title">Siap Dimulai!</div>
+        
+        <div class="ready-subtitle">
+            Latihan selesai. Anda sudah siap untuk tes sebenarnya.
+        </div>
+
+        {% if test_type == 'go_no_go' %}
+        <div class="practice-summary">
+            <h4>📝 Tes Go/No-Go</h4>
+            <ul>
+                <li>Total: <strong>10 pertanyaan</strong></li>
+                <li>Tekan tombol saat melihat "TEKAN"</li>
+                <li>Jangan tekan saat melihat "JANGAN TEKAN"</li>
+                <li>Waktu per soal: <strong>5 detik</strong></li>
+            </ul>
+        </div>
+
+        <div class="tips-section">
+            <h5>💡 Tips:</h5>
+            <ul>
+                <li>Perhatikan dengan seksama setiap stimulus</li>
+                <li>Reaksi cepat dan akurat sangat penting</li>
+                <li>Fokus pada tugas, bukan pada waktu</li>
+            </ul>
+        </div>
+
+        <button class="ready-button" onclick="window.location.href='/game/go_no_go'">
+            Mulai Tes Go/No-Go →
+        </button>
+
+        {% elif test_type == 'stroop' %}
+        <div class="practice-summary">
+            <h4>🎨 Tes Warna Stroop</h4>
+            <ul>
+                <li>Total: <strong>20 pertanyaan</strong></li>
+                <li>Pilih warna TULISAN, bukan arti kata</li>
+                <li>Kata dan warna tidak akan cocok</li>
+                <li>Waktu per soal: <strong>5 detik</strong></li>
+            </ul>
+        </div>
+
+        <div class="tips-section">
+            <h5>💡 Tips:</h5>
+            <ul>
+                <li>Abaikan arti kata, fokus pada warna tulisan</li>
+                <li>Ingat: ini adalah TES WARNA, bukan tes membaca</li>
+                <li>Akurasi lebih penting daripada kecepatan</li>
+            </ul>
+        </div>
+
+        <button class="ready-button" onclick="window.location.href='/game/stroop'">
+            Mulai Tes Color Stroop →
+        </button>
+
+        {% elif test_type == 'emoji' %}
+        <div class="practice-summary">
+            <h4>🎭 Tes Pencocokan Emoji</h4>
+            <ul>
+                <li>Total: <strong>10 pertanyaan</strong></li>
+                <li>Tentukan apakah deskripsi BENAR atau SALAH</li>
+                <li>Emoji akan berbeda-beda</li>
+                <li>Waktu per soal: <strong>5 detik</strong></li>
+            </ul>
+        </div>
+
+        <div class="tips-section">
+            <h5>💡 Tips:</h5>
+            <ul>
+                <li>Pelajari makna setiap emoji dengan cermat</li>
+                <li>Jangan tergesa-gesa dalam menjawab</li>
+                <li>Akurasi adalah prioritas utama</li>
+            </ul>
+        </div>
+
+        <button class="ready-button" onclick="window.location.href='/game/emoji'">
+            Mulai Tes Emoji →
+        </button>
+
+        {% endif %}
+    </div>
+</body>
+</html>

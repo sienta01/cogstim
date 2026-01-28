@@ -56,6 +56,12 @@
             background: #f5f5f5;
             border-radius: 15px;
             animation: slideIn 0.3s ease;
+            min-height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: normal;
+            line-height: 1.2;
         }
 
         @keyframes slideIn {
@@ -85,25 +91,13 @@
         }
 
         .go-btn, .nogo-btn, .wait-btn {
-            padding: 20px 50px;
-            font-size: 1.5rem;
+            padding: 30px 70px;
+            font-size: 3rem;
             color: white;
             border: none;
             border-radius: 30px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-weight: bold;
-        }
-
-        .instruction-text {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-        }
-
-        .instruction-text span {
             font-weight: bold;
         }
 
@@ -124,27 +118,6 @@
             box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
         }
 
-        .nogo-btn {
-            display: none;
-        }
-
-        .tombol-btn {
-            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
-            padding: 20px 60px;
-            font-size: 1.5rem;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: bold;
-        }
-
-        .tombol-btn:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
-        }
-
         .instruction-tekan {
             color: #00d084;
             font-weight: bold;
@@ -155,16 +128,6 @@
             font-weight: bold;
         }
 
-        .wait-btn {
-            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
-            opacity: 0.6;
-        }
-
-        .wait-btn:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
-        }
-
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -172,11 +135,16 @@
 
         /* Stroop Test Styles */
         .stroop-word {
-            font-size: 8rem;
+            font-size: 5.3rem;
             font-weight: bold;
-            letter-spacing: 10px;
-            margin: 40px 0;
+            letter-spacing: 1px;
+            margin: 10px 3px;
             animation: slideIn 0.3s ease;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, 1px 0 0 #000;            
         }
 
         .color-buttons {
@@ -184,20 +152,23 @@
             justify-content: center;
             gap: 15px;
             flex-wrap: wrap;
-            margin-top: 40px;
+            margin-top: 10px;
+            min-height: 150px;
+            align-items: center;
         }
 
         .color-btn {
-            width: 80px;
-            height: 80px;
+            width: 145px;
+            height: 145px;
             border: none;
             border-radius: 50%;
             cursor: pointer;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 2rem;
             color: white;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, 1px 0 0 #000;
         }
 
         .color-btn:hover {
@@ -209,7 +180,10 @@
             font-size: 2rem;
             font-weight: bold;
             margin-top: 20px;
-            min-height: 40px;
+            min-height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .result-correct {
@@ -218,6 +192,43 @@
 
         .result-wrong {
             color: #ff6b6b;
+        }
+
+        .emoji-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .emoji-btn {
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .correct-btn {
+            background: linear-gradient(135deg, #00c853 0%, #00a040 100%);
+        }
+
+        .correct-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0, 200, 83, 0.4);
+        }
+
+        .wrong-btn {
+            background: linear-gradient(135deg, #ff5252 0%, #ff0000 100%);
+        }
+
+        .wrong-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 82, 82, 0.4);
         }
 
         .progress-bar {
@@ -278,13 +289,21 @@
         .controls-hidden .color-buttons {
             display: none !important;
         }
+
+        p[style*="font-size: 1.5rem"],
+        p[style*="font-size: 1.1rem"] {
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 
 </head>
     
 <body>
     <div class="game-container">
-        <div class="question-counter" id="questionCounter">1 / 20</div>
+        <div class="question-counter" id="questionCounter">1 / {{ total_trials }}</div>
         <div class="title" id="testTitle">Test</div>
         
         <div class="progress-bar">
@@ -293,20 +312,42 @@
 
         <!-- Go/No-Go Test -->
         <div id="goNoGoTest" style="display:none;">
-            <p class="instruction-text"><span class="instruction-tekan">Tekan tombol bila terdapat kata "TEKAN TOMBOL"</span> | <span class="instruction-jangan">Jangan tekan tombol bila terdapat kata "JANGAN TEKAN TOMBOL"</span></p>
+            <p style="font-size: 1.5rem; color: #666; margin-bottom: 20px;">Hanya tekan tombol bila terdapat tulisan "TEKAN"</p>
             <div class="go-no-go-shape" id="shapeDisplay"></div>
             <div class="go-no-go-buttons">
-                <button class="tombol-btn" id="tombolButton" onclick="submitGoNoGo('go')">TOMBOL</button>
+                <button class="go-btn" id="goButton" onclick="submitGoNoGo('go')">TEKAN</button>
             </div>
-            <p id="resultGoNoGo" class="result-message"></p>
+            <p id="result" class="result-message"></p>
         </div>
 
         <!-- Stroop Test -->
         <div id="stroopTest" style="display:none;">
-            <p style="font-size: 1.1rem; color: #666; margin-bottom: 20px;">Pilih warna TULISAN, bukan arti kata!</p>
+            <p style="font-size: 1.5rem; color: #666; margin-bottom: 20px;">Pilihlah WARNA TULISAN,<br>bukan arti kata!</p>
             <div class="stroop-word" id="stroopWord"></div>
             <div class="color-buttons" id="colorButtons"></div>
-            <p id="resultStroop" class="result-message"></p>
+            <p id="resultStroop" class="result-message" style="margin-bottom: 10px;"></p>
+        </div>
+
+        <!-- Emoji Matching Test -->
+        <div id="emojiTest" style="display:none;">
+            <p style="font-size: 1.5rem; color: #666; margin-bottom: 20px;">Apakah deskripsi ini benar untuk emoji?</p>
+            <div style="font-size: 6rem; margin: 30px 0;" id="emojiDisplay"></div>
+            <div style="font-size: 1.8rem; margin: 20px 0; font-weight: bold;" id="descriptionDisplay"></div>
+            <div class="emoji-buttons">
+                <button class="emoji-btn correct-btn" onclick="submitEmoji(true)">✅ BENAR</button>
+                <button class="emoji-btn wrong-btn" onclick="submitEmoji(false)">❌ SALAH</button>
+            </div>
+            <p id="resultEmoji" class="result-message"></p>
+        </div>        <!-- Emoji Test -->
+        <div id="emojiTest" style="display:none;">
+            <p style="font-size: 1.5rem; color: #666; margin-bottom: 20px;">Apakah kombinasi ini benar?</p>
+            <div id="emojiDisplay" style="font-size: 8rem; margin: 30px 0; min-height: 120px; display: flex; align-items: center; justify-content: center;"></div>
+            <div id="descriptionDisplay" style="font-size: 2rem; font-weight: bold; margin: 20px 0; min-height: 60px; display: flex; align-items: center; justify-content: center;"></div>
+            <div class="emoji-buttons" id="emojiButtons">
+                <button class="emoji-btn correct-btn" onclick="submitEmoji(true)">Benar ✅</button>
+                <button class="emoji-btn wrong-btn" onclick="submitEmoji(false)">Salah ❌</button>
+            </div>
+            <p id="resultEmoji" class="result-message"></p>
         </div>
 
         <!-- Final Results -->
@@ -330,11 +371,11 @@
     let currentTrial = null;
     let trials = [];
     let trialIndex = 0;
-    let totalTrials = 20;
+    let totalTrials = {{ total_trials }};
     let responseGiven = false;
     let trialTimer = null;
     let timeRemaining = 0;
-    const TRIAL_DURATION = 2000; // 2 seconds per trial
+    const TRIAL_DURATION = 3000; // time per trial
 
     function startTrialTimer() {
         timeRemaining = TRIAL_DURATION / 1000; // Convert to seconds
@@ -348,12 +389,7 @@
                 clearInterval(trialTimer);
                 // Auto-advance if no response
                 if (!responseGiven) {
-                    if (testType === 'go_no_go') {
-                        submitGoNoGo('nogo_timeout');
-                    } else if (testType === 'stroop') {
-                        // Auto-submit as incorrect for Stroop
-                        submitStroop('timeout');
-                    }
+                    submitGoNoGo('nogo_timeout');
                 }
             }
         }, 100);
@@ -373,17 +409,31 @@
 
     async function loadNextTrial() {
         responseGiven = false;
-        // Clear both result elements
-        const resultGoNoGo = document.getElementById("resultGoNoGo");
-        const resultStroop = document.getElementById("resultStroop");
-        if (resultGoNoGo) resultGoNoGo.innerText = "";
-        if (resultStroop) resultStroop.innerText = "";
+        document.getElementById("result").innerText = "";
+        document.getElementById("resultStroop").innerText = "";
+        document.getElementById("resultEmoji").innerText = "";
         stopTrialTimer();
         
-        // Disable buttons at start
+        // Re-enable buttons at start
         if (testType === 'go_no_go') {
-            document.getElementById("tombolButton").disabled = false;
+            document.getElementById("goButton").disabled = false;
+        } else if (testType === 'stroop') {
+            const stroopButtons = document.querySelectorAll('.color-btn');
+            stroopButtons.forEach(btn => btn.disabled = false);
+        } else if (testType === 'emoji') {
+            const emojiButtons = document.querySelectorAll('.emoji-btn');
+            emojiButtons.forEach(btn => btn.disabled = false);
         }
+        
+        // Clear display for blank period
+        document.getElementById("shapeDisplay").innerText = "";
+        document.getElementById("stroopWord").innerText = "";
+        document.getElementById("colorButtons").innerHTML = "";
+        document.getElementById("emojiDisplay").innerText = "";
+        document.getElementById("descriptionDisplay").innerText = "";
+        
+        // Wait before showing new trial
+        await new Promise(resolve => setTimeout(resolve, 500));
         
         let response = await fetch("/next");
         let result = await response.json();
@@ -401,22 +451,16 @@
             } else if (testType === 'stroop') {
                 displayStroopTrial(result);
                 startTrialTimer();
+            } else if (testType === 'emoji') {
+                displayEmojiTrial(result);
+                startTrialTimer();
             }
         }
     }
 
-    function updateQuestionCounter() {
-        document.getElementById("questionCounter").innerText = trialIndex + " / " + totalTrials;
-    }
-
     function displayGoNoGoTrial(trial) {
-        if (trial.is_go_trial) {
-            document.getElementById("shapeDisplay").innerText = "TEKAN TOMBOL";
-            document.getElementById("shapeDisplay").style.color = "#00d084";
-        } else {
-            document.getElementById("shapeDisplay").innerText = "JANGAN TEKAN TOMBOL";
-            document.getElementById("shapeDisplay").style.color = "#ff6b6b";
-        }
+        const display = trial.shape || "?";
+        document.getElementById("shapeDisplay").innerText = display;
     }
 
     function displayStroopTrial(trial) {
@@ -455,18 +499,25 @@
         });
     }
 
+    function displayEmojiTrial(trial) {
+        const emoji = trial.emoji;
+        const description = trial.description;
+        document.getElementById("emojiDisplay").innerText = emoji;
+        document.getElementById("descriptionDisplay").innerText = description;
+    }
+
     async function submitGoNoGo(action) {
         if (responseGiven) return;
         responseGiven = true;
         stopTrialTimer();
         
         // Disable button after response
-        document.getElementById("tombolButton").disabled = true;
+        document.getElementById("goButton").disabled = true;
         
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: action })
+            body: JSON.stringify({ action: "go" })
         });
 
         let result = await response.json();
@@ -492,20 +543,50 @@
         handleResponse(result);
     }
 
-    function handleResponse(result) {
-        // Get the appropriate result element based on test type
-        let resultElement = testType === 'go_no_go' 
-            ? document.getElementById("resultGoNoGo") 
-            : document.getElementById("resultStroop");
+    async function submitEmoji(isCorrect) {
+        if (responseGiven) return;
+        responseGiven = true;
+        stopTrialTimer();
+        
+        // Disable all emoji buttons after response
+        const buttons = document.querySelectorAll('.emoji-btn');
+        buttons.forEach(btn => btn.disabled = true);
+        
+        let response = await fetch("/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_choice: isCorrect })
+        });
 
-        if (result.finished) {
+        let result = await response.json();
+        handleResponse(result);
+    }
+
+    function handleResponse(result) {
+        // Get the correct result element based on test type
+        let resultElement;
+        if (testType === 'go_no_go') {
+            resultElement = document.getElementById("result");
+        } else if (testType === 'stroop') {
+            resultElement = document.getElementById("resultStroop");
+        } else if (testType === 'emoji') {
+            resultElement = document.getElementById("resultEmoji");
+        }
+
+        if (result.practice_finished) {
+            // Practice finished, redirect to ready page
+            window.location.href = `/ready/${testType}`;
+        } else if (result.finished) {
             if (result.final_results) {
-                // Both tests finished, redirect to final results
+                // All tests finished, redirect to final results
                 const resultsJSON = encodeURIComponent(JSON.stringify(result.all_scores));
                 window.location.href = `/test_results?results=${resultsJSON}`;
             } else if (result.next_test === 'stroop') {
                 // Go/No-Go finished, proceed to Stroop instructions
                 window.location.href = `/test_instructions/stroop`;
+            } else if (result.next_test === 'emoji') {
+                // Stroop finished, proceed to Emoji instructions
+                window.location.href = `/test_instructions/emoji`;
             } else {
                 // Fallback to final results
                 window.location.href = `/test_results`;
@@ -518,27 +599,6 @@
                 resultElement.innerHTML = "❌ Salah!";
                 resultElement.className = "result-message result-wrong";
             }
-            
-            // Add feedback for Stroop test showing user answer and correct answer
-            if (result.correct_answer) {
-                const colorNames = {
-                    "red": "MERAH",
-                    "blue": "BIRU",
-                    "green": "HIJAU",
-                    "yellow": "KUNING",
-                    "purple": "UNGU"
-                };
-                const correctColorName = colorNames[result.correct_answer];
-                
-                if (result.user_answer) {
-                    const userColorName = colorNames[result.user_answer];
-                    resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Jawaban: ${userColorName} | Benar: ${correctColorName}</small>`;
-                } else {
-                    // Timeout case - no user answer
-                    resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Waktu habis | Benar: ${correctColorName}</small>`;
-                }
-            }
-            
             setTimeout(loadNextTrial, 1500);
         }
     }
@@ -549,7 +609,7 @@
         document.getElementById("goNoGoTest").style.display = "none";
         document.getElementById("stroopTest").style.display = "none";
         
-        const total = result.total || 20;
+        const total = result.total || totalTrials;
         const correct = result.correct || 0;
         const accuracy = Math.round((correct / total) * 100);
         
@@ -563,11 +623,14 @@
 
     // Initialize
     if (testType === 'go_no_go') {
-        document.getElementById("testTitle").innerText = "🎯 Go/No-Go Task";
+        document.getElementById("testTitle").innerText = "🎯 Tes Kecekatan";
         document.getElementById("goNoGoTest").style.display = "block";
     } else if (testType === 'stroop') {
-        document.getElementById("testTitle").innerText = "🎨 Color Stroop Test";
+        document.getElementById("testTitle").innerText = "🎨 Tes Warna Stroop";
         document.getElementById("stroopTest").style.display = "block";
+    } else if (testType === 'emoji') {
+        document.getElementById("testTitle").innerText = "🎭 Tes Pencocokan Emoji";
+        document.getElementById("emojiTest").style.display = "block";
     }
 
     loadNextTrial();

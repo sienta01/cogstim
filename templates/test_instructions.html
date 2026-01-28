@@ -121,17 +121,7 @@
         <div class="test-number">Tugas 1</div>
         <div class="title-with-emoji">
             <span class="emoji-icon">🎯</span>
-            <div class="test-title">Go/No-Go Test</div>
-        </div>
-
-        <div class="instruction-box">
-            <h4>Apa itu test ini?</h4>
-            <p>Test ini mengukur kemampuan Anda untuk:</p>
-            <ul>
-                <li><strong>Respons cepat dan akurat</strong> terhadap rangsangan</li>
-                <li><strong>Pengendalian diri (inhibisi)</strong> saat tidak harus merespons</li>
-                <li><strong>Fokus perhatian</strong> pada tugas</li>
-            </ul>
+            <div class="test-title">Tes Kecekatan</div>
         </div>
 
         <div class="instruction-box">
@@ -151,23 +141,16 @@
             <p><strong style="color: #ff6b6b; font-size: 1.5rem;">JANGAN TEKAN TOMBOL</strong> → ✗ Tunggu, jangan tekan!</p>
         </div>
 
-        <button class="start-button" onclick="window.location.href='/game/go_no_go'">Mulai Go/No-Go Test →</button>
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button class="start-button" onclick="window.location.href='/practice/go_no_go'" style="background: #FFA500; flex: 1;">🎯 Latihan (3 soal)</button>
+            <button class="start-button" onclick="window.location.href='/game/go_no_go'" style="flex: 1;">Mulai Go/No-Go Test →</button>
+        </div>
 
         {% elif test_type == 'stroop' %}
         <div class="test-number">Tugas 2</div>
         <div class="title-with-emoji">
             <span class="emoji-icon">🎨</span>
-            <div class="test-title">Color Stroop Test</div>
-        </div>
-
-        <div class="instruction-box">
-            <h4>Apa itu test ini?</h4>
-            <p>Test ini mengukur kemampuan Anda untuk:</p>
-            <ul>
-                <li><strong>Fokus selektif</strong> pada detail yang relevan</li>
-                <li><strong>Fungsi eksekutif</strong> dan kontrol kognitif</li>
-                <li><strong>Menahan distraksi</strong> dari informasi yang tidak relevan</li>
-            </ul>
+            <div class="test-title">Tes Warna Stroop</div>
         </div>
 
         <div class="instruction-box">
@@ -188,7 +171,41 @@
             <p>✓ Jawaban yang benar: <strong>HIJAU</strong> (pilih warna tulisan, bukan arti kata)</p>
         </div>
 
-        <button class="start-button" onclick="window.location.href='/game/stroop'">Mulai Color Stroop Test →</button>
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button class="start-button" onclick="window.location.href='/practice/stroop'" style="background: #FFA500; flex: 1;">🎯 Latihan (3 soal)</button>
+            <button class="start-button" onclick="window.location.href='/game/stroop'" style="flex: 1;">Mulai Color Stroop Test →</button>
+        </div>
+
+        {% elif test_type == 'emoji' %}
+        <div class="test-number">Tugas 3</div>
+        <div class="title-with-emoji">
+            <span class="emoji-icon">🎭</span>
+            <div class="test-title">Tes Pencocokan Emoji</div>
+        </div>
+
+        <div class="instruction-box">
+            <h4>Cara bermain:</h4>
+            <ul>
+                <li>Anda akan melihat emoji dan sebuah deskripsi</li>
+                <li>Tentukan apakah deskripsi itu <strong>BENAR</strong> atau <strong>SALAH</strong> untuk emoji tersebut</li>
+                <li>Contoh: 😀 = "Wajah" → <strong>BENAR</strong></li>
+                <li>Contoh: 🚗 = "Burung" → <strong>SALAH</strong></li>
+                <li>Akan ada 10 pertanyaan</li>
+                <li>Pastikan akurat - kecepatan sekunder</li>
+            </ul>
+        </div>
+
+        <div class="example-section">
+            <h5>📌 Contoh:</h5>
+            <p style="font-size: 3rem;">😀</p>
+            <p style="font-size: 1.5rem;"><strong>Wajah</strong></p>
+            <p>✓ Jawaban yang benar: <strong>BENAR</strong> (😀 memang adalah wajah)</p>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button class="start-button" onclick="window.location.href='/practice/emoji'" style="background: #FFA500; flex: 1;">🎯 Latihan (3 soal)</button>
+            <button class="start-button" onclick="window.location.href='/game/emoji'" style="flex: 1;">Mulai Emoji Test →</button>
+        </div>
 
         {% endif %}
     </div>

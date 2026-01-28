@@ -1,7 +1,20 @@
+"""
+Cognitive Stimulation Application
+Version: 2.1.0
+Release Date: January 28, 2026
+Author: Development Team
+Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
+"""
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
+
+# Application Version
+__version__ = "2.1.0"
+__release_date__ = "2026-01-28"
+__app_name__ = "Cognitive Stimulation Assessment"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -26,6 +39,20 @@ COLOR_HEX = {
     "yellow": "#FFFF00",
     "purple": "#AA00AA"
 }
+
+# Emoji Matching Test Configuration
+EMOJI_SET = [
+    {"emoji": "😀", "description": "Wajah"},
+    {"emoji": "🚗", "description": "Mobil"},
+    {"emoji": "🍎", "description": "Apel"},
+    {"emoji": "🐶", "description": "Anjing"},
+    {"emoji": "⚽", "description": "Bola"},
+    {"emoji": "🌞", "description": "Matahari"},
+    {"emoji": "📚", "description": "Buku"},
+    {"emoji": "🎸", "description": "Gitar"},
+    {"emoji": "✈️", "description": "Pesawat"},
+    {"emoji": "🎂", "description": "Kue"}
+]
 
 import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -102,7 +129,7 @@ def reference():
 def test_instructions(test_type):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if test_type not in ['go_no_go', 'stroop']:
+    if test_type not in ['go_no_go', 'stroop', 'emoji']:
         flash("Invalid test type")
         return redirect(url_for('dashboard'))
     return render_template('test_instructions.html', test_type=test_type)
@@ -120,7 +147,7 @@ def select_test():
 def game(test_type):
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if test_type not in ['go_no_go', 'stroop']:
+    if test_type not in ['go_no_go', 'stroop', 'emoji']:
         flash("Invalid test type")
         return redirect(url_for('dashboard'))
     
@@ -129,19 +156,82 @@ def game(test_type):
     session["correct_count"] = 0
     session["total_count"] = 0
     session["trial_index"] = 0
+    session["is_practice"] = False
     
     if test_type == 'go_no_go':
-        session["go_no_go_trials"] = generate_go_no_go_trials(20)  # 20 trials
+        total_trials = 10
+        session["go_no_go_trials"] = generate_go_no_go_trials(total_trials)  # go/no-go number of trials
     elif test_type == 'stroop':
-        session["stroop_trials"] = generate_stroop_trials(20)  # 20 trials
+        total_trials = 10
+        session["stroop_trials"] = generate_stroop_trials(total_trials)  # stroop number of trials
+    elif test_type == 'emoji':
+        total_trials = 10
+        session["emoji_trials"] = generate_emoji_trials(total_trials)  # emoji matching number of trials
     
-    return render_template('game.html', test_type=test_type)
+    return render_template('game.html', test_type=test_type, total_trials=total_trials)
+
+@app.route("/practice/<test_type>")
+def practice(test_type):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if test_type not in ['go_no_go', 'stroop', 'emoji']:
+        flash("Invalid test type")
+        return redirect(url_for('dashboard'))
+    
+    session["test_type"] = test_type
+    session["score"] = 0
+    session["correct_count"] = 0
+    session["total_count"] = 0
+    session["trial_index"] = 0
+    session["is_practice"] = True
+    
+    if test_type == 'go_no_go':
+        practice_trials = 3
+        session["go_no_go_practice_trials"] = generate_go_no_go_trials(practice_trials)  # practice trials
+        total_trials = practice_trials
+    elif test_type == 'stroop':
+        practice_trials = 3
+        session["stroop_practice_trials"] = generate_stroop_trials(practice_trials)  # practice trials
+        total_trials = practice_trials
+    elif test_type == 'emoji':
+        practice_trials = 3
+        session["emoji_practice_trials"] = generate_emoji_trials(practice_trials)  # practice trials
+        total_trials = practice_trials
+    
+    return render_template('game.html', test_type=test_type, total_trials=total_trials)
+
+@app.route("/ready/<test_type>")
+def ready(test_type):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    if test_type not in ['go_no_go', 'stroop', 'emoji']:
+        flash("Invalid test type")
+        return redirect(url_for('dashboard'))
+    
+    return render_template('ready.html', test_type=test_type)
 
 def generate_go_no_go_trials(num_trials):
-    """Generate random Go/No-Go trials"""
+    """Generate random Go/No-Go trials with max 5 consecutive same type"""
     trials = []
+    max_consecutive = 5
+    consecutive_count = 0
+    last_was_go = None
+    
     for _ in range(num_trials):
-        is_go = random.choice([True, False])
+        # If we've hit the max consecutive, force the opposite
+        if consecutive_count >= max_consecutive:
+            is_go = not last_was_go
+            consecutive_count = 1
+        else:
+            is_go = random.choice([True, False])
+            # Check if it's the same as the last one
+            if is_go == last_was_go:
+                consecutive_count += 1
+            else:
+                consecutive_count = 1
+        
+        last_was_go = is_go
+        
         if is_go:
             shape = random.choice(GO_SHAPES)
         else:
@@ -162,6 +252,30 @@ def generate_stroop_trials(num_trials):
             "word": COLOR_DISPLAY_NAMES[word_meaning],
             "display_color": COLOR_HEX[word_color],
             "correct_answer": word_color  # User should respond to color, not word meaning
+        })
+    return trials
+
+def generate_emoji_trials(num_trials):
+    """Generate Emoji matching trials"""
+    trials = []
+    for _ in range(num_trials):
+        # Select a random emoji
+        correct_emoji = random.choice(EMOJI_SET)
+        
+        # Decide if the pairing is correct or incorrect
+        is_correct = random.choice([True, False])
+        
+        if is_correct:
+            description = correct_emoji["description"]
+        else:
+            # Choose a wrong description from a different emoji
+            wrong_emoji = random.choice([e for e in EMOJI_SET if e["emoji"] != correct_emoji["emoji"]])
+            description = wrong_emoji["description"]
+        
+        trials.append({
+            "emoji": correct_emoji["emoji"],
+            "description": description,
+            "is_correct": is_correct
         })
     return trials
 
@@ -209,6 +323,7 @@ def next_trial():
     
     if test_type == 'go_no_go':
         trials = session.get("go_no_go_trials", [])
+        
         if trial_index >= len(trials):
             return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
         
@@ -216,11 +331,12 @@ def next_trial():
         return jsonify({
             "finished": False,
             "shape": trial["shape"],
-            "is_go_trial": trial["is_go"]
+            "is_go": trial["is_go"]
         })
     
     elif test_type == 'stroop':
         trials = session.get("stroop_trials", [])
+        
         if trial_index >= len(trials):
             return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
         
@@ -230,6 +346,23 @@ def next_trial():
             "word": trial["word"],
             "display_color": trial["display_color"],
             "correct_answer": trial["correct_answer"]
+        })
+    
+    elif test_type == 'emoji':
+        is_practice = session.get("is_practice", False)
+        if is_practice:
+            trials = session.get("emoji_practice_trials", [])
+        else:
+            trials = session.get("emoji_trials", [])
+        
+        if trial_index >= len(trials):
+            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
+        
+        trial = trials[trial_index]
+        return jsonify({
+            "finished": False,
+            "emoji": trial["emoji"],
+            "description": trial["description"]
         })
     
     return jsonify({"finished": True, "error": "Invalid test type"})
@@ -242,9 +375,14 @@ def submit():
     data = request.get_json()
     test_type = session.get("test_type")
     trial_index = session.get("trial_index", 0)
+    is_practice = session.get("is_practice", False)
     
     if test_type == 'go_no_go':
-        trials = session.get("go_no_go_trials", [])
+        if is_practice:
+            trials = session.get("go_no_go_practice_trials", [])
+        else:
+            trials = session.get("go_no_go_trials", [])
+            
         if trial_index >= len(trials):
             return jsonify({"finished": True})
         
@@ -266,7 +404,11 @@ def submit():
             result_message = "❌ Salah!"
     
     elif test_type == 'stroop':
-        trials = session.get("stroop_trials", [])
+        if is_practice:
+            trials = session.get("stroop_practice_trials", [])
+        else:
+            trials = session.get("stroop_trials", [])
+            
         if trial_index >= len(trials):
             return jsonify({"finished": True})
         
@@ -288,54 +430,90 @@ def submit():
         else:
             result_message = "❌ Salah!"
     
+    elif test_type == 'emoji':
+        if is_practice:
+            trials = session.get("emoji_practice_trials", [])
+        else:
+            trials = session.get("emoji_trials", [])
+            
+        if trial_index >= len(trials):
+            return jsonify({"finished": True})
+        
+        trial = trials[trial_index]
+        user_choice = data.get("user_choice")  # True or False from user
+        correct_answer = trial["is_correct"]
+        
+        is_correct = user_choice == correct_answer
+        session["total_count"] += 1
+        if is_correct:
+            session["correct_count"] += 1
+            session["score"] += 5
+            result_message = "✅ Benar!"
+        else:
+            result_message = "❌ Salah!"
+    
     else:
         return jsonify({"error": "Invalid test type"})
     
     session["trial_index"] += 1
     
     # Check if finished
-    if session["trial_index"] >= (len(trials) if test_type == 'go_no_go' else len(session.get("stroop_trials", []))):
-        # Store current test results
-        test_scores = session.get("test_scores", {})
-        test_scores[test_type] = {
-            "score": session["score"],
-            "correct_count": session["correct_count"],
-            "total_count": session["total_count"]
-        }
-        session["test_scores"] = test_scores
-        
-        # Save score to database
-        selected_patient_id = session.get("selected_patient_id")
-        if selected_patient_id:
-            accuracy = (session["correct_count"] / session["total_count"] * 100) if session["total_count"] > 0 else 0
-            new_score = Score(
-                score=session["score"],
-                test_type=test_type,
-                accuracy=accuracy,
-                patient_id=selected_patient_id
-            )
-            db.session.add(new_score)
-            db.session.commit()
-        
-        # Check if both tests are completed
-        completed_tests = session.get("completed_tests", [])
-        completed_tests.append(test_type)
-        session["completed_tests"] = completed_tests
-        
-        if test_type == 'go_no_go' and 'stroop' not in completed_tests:
-            # Go/No-Go finished, proceed to Stroop
+    if session["trial_index"] >= len(trials):
+        if is_practice:
+            # Practice test finished, will show message on next /next call
             return jsonify({
-                "finished": True,
-                "next_test": "stroop",
-                "redirect_url": "/game/stroop"
+                "practice_finished": True,
+                "message": "Praktik selesai!"
             })
         else:
-            # Both tests finished, show final results
-            return jsonify({
-                "finished": True,
-                "final_results": True,
-                "all_scores": test_scores
-            })
+            # Actual test finished, save scores
+            test_scores = session.get("test_scores", {})
+            test_scores[test_type] = {
+                "score": session["score"],
+                "correct_count": session["correct_count"],
+                "total_count": session["total_count"]
+            }
+            session["test_scores"] = test_scores
+            
+            # Save score to database
+            selected_patient_id = session.get("selected_patient_id")
+            if selected_patient_id:
+                accuracy = (session["correct_count"] / session["total_count"] * 100) if session["total_count"] > 0 else 0
+                new_score = Score(
+                    score=session["score"],
+                    test_type=test_type,
+                    accuracy=accuracy,
+                    patient_id=selected_patient_id
+                )
+                db.session.add(new_score)
+                db.session.commit()
+            
+            # Check what test comes next
+            completed_tests = session.get("completed_tests", [])
+            completed_tests.append(test_type)
+            session["completed_tests"] = completed_tests
+            
+            if test_type == 'go_no_go' and 'stroop' not in completed_tests:
+                # Go/No-Go finished, proceed to Stroop
+                return jsonify({
+                    "finished": True,
+                    "next_test": "stroop",
+                    "redirect_url": "/test_instructions/stroop"
+                })
+            elif test_type == 'stroop' and 'emoji' not in completed_tests:
+                # Stroop finished, proceed to Emoji matching
+                return jsonify({
+                    "finished": True,
+                    "next_test": "emoji",
+                    "redirect_url": "/test_instructions/emoji"
+                })
+            else:
+                # All tests finished, show final results
+                return jsonify({
+                    "finished": True,
+                    "final_results": True,
+                    "all_scores": test_scores
+                })
     
     # For Stroop test, include user answer and correct answer in feedback
     if test_type == 'stroop':

@@ -29,7 +29,7 @@ Data Tracked:
 
 ---
 
-### AFTER: Two Professional Tests
+### AFTER: Multi-test Suite (Go/No-Go, Stroop, Emoji)
 
 #### Test 1: Go/No-Go Test
 
@@ -46,8 +46,9 @@ Example Trial:
   Trial 2: Shape 🔺 appears → User waits → ✅ Correct (NO-GO trial)
   Trial 3: Shape ⭕ appears → User waits → ❌ Wrong (should have clicked)
 
-Duration: ~20-40 seconds (20 trials)
-Max Score: 200 (10 points × 20 trials)
+Duration: ~30-60 seconds (10 trials)
+Max Score: 100 (10 points × 10 trials)
+Practice: 3 trials available
 Cognitive Domain: Response inhibition, executive control
 
 Data Tracked:
