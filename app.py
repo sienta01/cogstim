@@ -56,7 +56,14 @@ EMOJI_SET = [
 
 import os
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
+
+# Use absolute path for PythonAnywhere compatibility
+# On PythonAnywhere, use home directory to avoid I/O issues
+DB_PATH = os.path.expanduser('~/cogstim_data/database.db')
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
+# old config
+# app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -185,7 +192,7 @@ def practice(test_type):
     session["trial_index"] = 0
     session["is_practice"] = True
     
-    if test_type == 'go_no_go':
+    if ~_type == 'go_no_go':
         practice_trials = 3
         session["go_no_go_practice_trials"] = generate_go_no_go_trials(practice_trials)  # practice trials
         total_trials = practice_trials
