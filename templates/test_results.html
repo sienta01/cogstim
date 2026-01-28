@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Test Selesai</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .results-container {
+            background: white;
+            border-radius: 15px;
+            padding: 50px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .celebration {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 0.6s ease infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .completion-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .score-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .score-card h5 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .accuracy-display {
+            font-size: 1.2rem;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .test-result-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .test-result-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 10px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .test-result-box .test-emoji {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .test-result-box .test-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .test-result-box .test-score {
+            font-size: 1.8rem;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .test-result-box .test-accuracy {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .action-buttons {
+            margin-top: 40px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #ddd;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #ccc;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .summary-text {
+            font-size: 1.1rem;
+            color: #666;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="results-container">
+        <div class="celebration">🎉</div>
+        <div class="completion-title">Semua Test Selesai!</div>
+        
+        <div class="summary-text">
+            Anda telah menyelesaikan kedua test kognitif.<br>
+            Skor dan akurasi Anda telah tersimpan dalam sistem.
+        </div>
+
+        <div class="score-card">
+            <h5>Hasil Keseluruhan</h5>
+            <div class="test-result-row" id="resultsContainer">
+                <!-- Results will be inserted here by JavaScript -->
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/scores" class="btn-action">📊 Lihat Semua Skor</a>
+            <a href="/dashboard" class="btn-action">🏠 Kembali ke Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // Parse test results from URL or session
+        const urlParams = new URLSearchParams(window.location.search);
+        const resultsJSON = urlParams.get('results');
+        
+        if (resultsJSON) {
+            try {
+                const results = JSON.parse(decodeURIComponent(resultsJSON));
+                displayResults(results);
+            } catch (e) {
+                console.error("Error parsing results:", e);
+            }
+        }
+
+        function displayResults(results) {
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = '';
+
+            const testInfo = {
+                'go_no_go': { emoji: '🎯', name: 'Go/No-Go' },
+                'stroop': { emoji: '🎨', name: 'Color Stroop' }
+            };
+
+            for (const [testType, scores] of Object.entries(results)) {
+                if (testInfo[testType]) {
+                    const info = testInfo[testType];
+                    const accuracy = Math.round((scores.correct_count / scores.total_count) * 100);
+                    
+                    const box = document.createElement('div');
+                    box.className = 'test-result-box';
+                    box.innerHTML = `
+                        <div class="test-emoji">${info.emoji}</div>
+                        <div class="test-name">${info.name}</div>
+                        <div class="test-score">${scores.score}</div>
+                        <div class="test-accuracy">${scores.correct_count}/${scores.total_count} | Akurasi: ${accuracy}%</div>
+                    `;
+                    container.appendChild(box);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

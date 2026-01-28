@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instruksi Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .instruction-container {
+            background: white;
+            border-radius: 15px;
+            padding: 50px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .test-number {
+            font-size: 1rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .test-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .instruction-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .instruction-box h4 {
+            color: #667eea;
+            margin-top: 0;
+        }
+
+        .instruction-box ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .instruction-box li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .instruction-box .highlight {
+            background: #fff3cd;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        .start-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+
+        .emoji-icon {
+            font-size: 2.5rem;
+            margin-right: 10px;
+        }
+
+        .title-with-emoji {
+            display: flex;
+            align-items: center;
+        }
+
+        .example-section {
+            background: #e8eaf6;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+
+        .example-section h5 {
+            color: #667eea;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="instruction-container">
+        {% if test_type == 'go_no_go' %}
+        <div class="test-number">Tugas 1</div>
+        <div class="title-with-emoji">
+            <span class="emoji-icon">🎯</span>
+            <div class="test-title">Go/No-Go Test</div>
+        </div>
+
+        <div class="instruction-box">
+            <h4>Apa itu test ini?</h4>
+            <p>Test ini mengukur kemampuan Anda untuk:</p>
+            <ul>
+                <li><strong>Respons cepat dan akurat</strong> terhadap rangsangan</li>
+                <li><strong>Pengendalian diri (inhibisi)</strong> saat tidak harus merespons</li>
+                <li><strong>Fokus perhatian</strong> pada tugas</li>
+            </ul>
+        </div>
+
+        <div class="instruction-box">
+            <h4>Cara bermain:</h4>
+            <ul>
+                <li>Anda akan melihat 20 layar berisi teks</li>
+                <li>Jika layar menampilkan <span class="highlight">TEKAN TOMBOL</span> → <strong style="color: #00d084;">tekan tombol</strong> dengan cepat</li>
+                <li>Jika layar menampilkan <span class="highlight">JANGAN TEKAN TOMBOL</span> → <strong style="color: #ff6b6b;">JANGAN tekan tombol</strong></li>
+                <li>Setiap respons yang benar mendapat poin</li>
+                <li>Kecepatan dan akurasi sama pentingnya</li>
+            </ul>
+        </div>
+
+        <div class="example-section">
+            <h5>📌 Contoh:</h5>
+            <p><strong style="color: #00d084; font-size: 1.5rem;">TEKAN TOMBOL</strong> → ✓ Tekan tombol!</p>
+            <p><strong style="color: #ff6b6b; font-size: 1.5rem;">JANGAN TEKAN TOMBOL</strong> → ✗ Tunggu, jangan tekan!</p>
+        </div>
+
+        <button class="start-button" onclick="window.location.href='/game/go_no_go'">Mulai Go/No-Go Test →</button>
+
+        {% elif test_type == 'stroop' %}
+        <div class="test-number">Tugas 2</div>
+        <div class="title-with-emoji">
+            <span class="emoji-icon">🎨</span>
+            <div class="test-title">Color Stroop Test</div>
+        </div>
+
+        <div class="instruction-box">
+            <h4>Apa itu test ini?</h4>
+            <p>Test ini mengukur kemampuan Anda untuk:</p>
+            <ul>
+                <li><strong>Fokus selektif</strong> pada detail yang relevan</li>
+                <li><strong>Fungsi eksekutif</strong> dan kontrol kognitif</li>
+                <li><strong>Menahan distraksi</strong> dari informasi yang tidak relevan</li>
+            </ul>
+        </div>
+
+        <div class="instruction-box">
+            <h4>Cara bermain:</h4>
+            <ul>
+                <li>Anda akan melihat kata warna yang <strong>TIDAK sesuai</strong> dengan warna tulisannya</li>
+                <li><strong style="background: #fff3cd; padding: 2px 6px;">Penting:</strong> Pilih warna TULISAN, bukan arti kata!</li>
+                <li>Contoh: Kata "<span style="color: blue; font-weight: bold;">MERAH</span>" ditulis dengan warna biru → jawab <strong>BIRU</strong></li>
+                <li>Akan ada 20 pertanyaan</li>
+                <li>Pastikan akurat - kecepatan sekunder</li>
+            </ul>
+        </div>
+
+        <div class="example-section">
+            <h5>📌 Contoh:</h5>
+            <p style="font-size: 1.5rem;"><span style="color: green; font-weight: bold;">MERAH</span></p>
+            <p>← Kata ini artinya "MERAH" tapi ditulis dengan warna <strong>HIJAU</strong></p>
+            <p>✓ Jawaban yang benar: <strong>HIJAU</strong> (pilih warna tulisan, bukan arti kata)</p>
+        </div>
+
+        <button class="start-button" onclick="window.location.href='/game/stroop'">Mulai Color Stroop Test →</button>
+
+        {% endif %}
+    </div>
+</body>
+</html>

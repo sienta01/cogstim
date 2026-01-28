@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Memory Game</title>
+    <title>Cognitive Test</title>
 
     <!-- MaterializeCSS CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
@@ -11,99 +11,566 @@
 
     <style>
         body {
-            background-color: #F5F5F5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             text-align: center;
-            padding-top: 30px; /* Kurangi padding atas */
-        }
-        .emoji {
-            font-size: 10rem;
-            margin: 10px 0;
-        }
-        .description {
-            font-size: 4rem;
-            font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 40px;
-        }
-        .btn-container {
+            padding: 20px;
             display: flex;
             justify-content: center;
-            gap: 40px; /* Tambah jarak antar tombol */
+            align-items: center;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            position: relative;
+        }
+
+        .question-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        /* Go/No-Go Test Styles */
+        .go-no-go-shape {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #333;
+            margin: 40px 0;
+            padding: 30px;
+            background: #f5f5f5;
+            border-radius: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .timer-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 20px;
+            height: 40px;
+        }
+
+        .go-no-go-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .go-btn, .nogo-btn, .wait-btn {
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .instruction-text {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .instruction-text span {
+            font-weight: bold;
+        }
+
+        .instruction-tekan {
+            color: #00d084;
+        }
+
+        .instruction-jangan {
+            color: #ff6b6b;
+        }
+
+        .go-btn {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+        }
+
+        .go-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
+        }
+
+        .nogo-btn {
+            display: none;
+        }
+
+        .tombol-btn {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+            padding: 20px 60px;
+            font-size: 1.5rem;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .tombol-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
+        }
+
+        .instruction-tekan {
+            color: #00d084;
+            font-weight: bold;
+        }
+
+        .instruction-jangan {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .wait-btn {
+            background: linear-gradient(135deg, #ffa500 0%, #ff8c00 100%);
+            opacity: 0.6;
+        }
+
+        .wait-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 165, 0, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Stroop Test Styles */
+        .stroop-word {
+            font-size: 8rem;
+            font-weight: bold;
+            letter-spacing: 10px;
+            margin: 40px 0;
+            animation: slideIn 0.3s ease;
+        }
+
+        .color-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .color-btn {
+            width: 80px;
+            height: 80px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .result-message {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-top: 20px;
+            min-height: 40px;
+        }
+
+        .result-correct {
+            color: #00d084;
+        }
+
+        .result-wrong {
+            color: #ff6b6b;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        #showScoresBtnContainer {
             margin-top: 30px;
         }
 
-        .btn-large {
-            width: 300px; /* Sedikit lebih kecil */
-            height: auto;
-            font-size: 2.5rem;
-            padding: 12px;
-        }
-        #result {
-            font-size: 2rem;
+        .scores-btn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            display: inline-block;
             font-weight: bold;
-            margin-top: 10px; /* Dekatkan ke tombol */
+            transition: all 0.3s ease;
+        }
+
+        .scores-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            color: white;
+        }
+
+        .finish-screen {
+            text-align: center;
+        }
+
+        .final-score {
+            font-size: 3rem;
+            color: #667eea;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .accuracy-info {
+            font-size: 1.2rem;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .controls-hidden .go-no-go-buttons,
+        .controls-hidden .color-buttons {
+            display: none !important;
         }
     </style>
 
 </head>
     
 <body>
-    <div class="container">
-        <h4 class="blue-text text-darken-2">Apakah kombinasi ini benar?</h4>
-
-        <h3 id="emojiDisplay" class="emoji"></h3>
-        <p id="descriptionDisplay" class="description"></p>
+    <div class="game-container">
+        <div class="question-counter" id="questionCounter">1 / 20</div>
+        <div class="title" id="testTitle">Test</div>
         
-        <div class="btn-container">
-            <button class="btn-large green darken-1 white-text waves-effect waves-light" onclick="submitAnswer(true)">Benar ✅</button>
-            <button class="btn-large red darken-1 white-text waves-effect waves-light" onclick="submitAnswer(false)">Salah ✖️</button>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressBar" style="width: 100%"></div>
         </div>
-  
-        <p id="result" class="flow-text blue-text text-darken-4"></p> <!-- Warna biru agar jelas -->
-        <div id="showScoresBtnContainer" style="display:none; margin-top:30px;">
-            <a href="/scores" class="btn-large blue white-text waves-effect waves-light">Lihat Skor</a>
+
+        <!-- Go/No-Go Test -->
+        <div id="goNoGoTest" style="display:none;">
+            <p class="instruction-text"><span class="instruction-tekan">Tekan tombol bila terdapat kata "TEKAN TOMBOL"</span> | <span class="instruction-jangan">Jangan tekan tombol bila terdapat kata "JANGAN TEKAN TOMBOL"</span></p>
+            <div class="go-no-go-shape" id="shapeDisplay"></div>
+            <div class="go-no-go-buttons">
+                <button class="tombol-btn" id="tombolButton" onclick="submitGoNoGo('go')">TOMBOL</button>
+            </div>
+            <p id="resultGoNoGo" class="result-message"></p>
+        </div>
+
+        <!-- Stroop Test -->
+        <div id="stroopTest" style="display:none;">
+            <p style="font-size: 1.1rem; color: #666; margin-bottom: 20px;">Pilih warna TULISAN, bukan arti kata!</p>
+            <div class="stroop-word" id="stroopWord"></div>
+            <div class="color-buttons" id="colorButtons"></div>
+            <p id="resultStroop" class="result-message"></p>
+        </div>
+
+        <!-- Final Results -->
+        <div id="showScoresBtnContainer" style="display:none;">
+            <div class="finish-screen">
+                <h3>🎉 Selesai!</h3>
+                <div class="final-score" id="finalScore">100</div>
+                <div class="accuracy-info">
+                    <span id="accuracyText">Akurasi: 100%</span>
+                </div>
+                <a href="/scores" class="scores-btn">Lihat Semua Skor →</a>
+                <br><br>
+                <a href="/dashboard" class="scores-btn">Kembali ke Dashboard</a>
+            </div>
         </div>
     </div>
 </body>
     
 <script>
-    async function loadNextPair() {
+    const testType = '{{ test_type }}';
+    let currentTrial = null;
+    let trials = [];
+    let trialIndex = 0;
+    let totalTrials = 20;
+    let responseGiven = false;
+    let trialTimer = null;
+    let timeRemaining = 0;
+    const TRIAL_DURATION = 2000; // 2 seconds per trial
+
+    function startTrialTimer() {
+        timeRemaining = TRIAL_DURATION / 1000; // Convert to seconds
+        updateTimerDisplay();
+        
+        trialTimer = setInterval(() => {
+            timeRemaining -= 0.1;
+            updateTimerDisplay();
+            
+            if (timeRemaining <= 0) {
+                clearInterval(trialTimer);
+                // Auto-advance if no response
+                if (!responseGiven) {
+                    if (testType === 'go_no_go') {
+                        submitGoNoGo('nogo_timeout');
+                    } else if (testType === 'stroop') {
+                        // Auto-submit as incorrect for Stroop
+                        submitStroop('timeout');
+                    }
+                }
+            }
+        }, 100);
+    }
+
+    function updateTimerDisplay() {
+        const percentage = Math.max(0, (timeRemaining / (TRIAL_DURATION / 1000)) * 100);
+        document.getElementById("progressBar").style.width = percentage + "%";
+    }
+
+    function stopTrialTimer() {
+        if (trialTimer) {
+            clearInterval(trialTimer);
+            trialTimer = null;
+        }
+    }
+
+    async function loadNextTrial() {
+        responseGiven = false;
+        // Clear both result elements
+        const resultGoNoGo = document.getElementById("resultGoNoGo");
+        const resultStroop = document.getElementById("resultStroop");
+        if (resultGoNoGo) resultGoNoGo.innerText = "";
+        if (resultStroop) resultStroop.innerText = "";
+        stopTrialTimer();
+        
+        // Disable buttons at start
+        if (testType === 'go_no_go') {
+            document.getElementById("tombolButton").disabled = false;
+        }
+        
         let response = await fetch("/next");
         let result = await response.json();
 
         if (result.finished) {
-            document.getElementById("result").innerText = "Permainan Selesai! Skor Anda: " + result.score;
-            document.querySelector(".btn-container").style.display = "none";
-            document.getElementById("showScoresBtnContainer").style.display = "block";
+            showFinalResults(result);
         } else {
-            document.getElementById("emojiDisplay").innerText = result.emoji || "❓";
-            document.getElementById("descriptionDisplay").innerText = result.description || "❓";
-            document.getElementById("result").innerText = ""; // Bersihkan pesan sebelumnya
+            currentTrial = result;
+            trialIndex++;
+            updateQuestionCounter();
+            
+            if (testType === 'go_no_go') {
+                displayGoNoGoTrial(result);
+                startTrialTimer();
+            } else if (testType === 'stroop') {
+                displayStroopTrial(result);
+                startTrialTimer();
+            }
         }
     }
 
-    async function submitAnswer(isTrue) {
+    function updateQuestionCounter() {
+        document.getElementById("questionCounter").innerText = trialIndex + " / " + totalTrials;
+    }
+
+    function displayGoNoGoTrial(trial) {
+        if (trial.is_go_trial) {
+            document.getElementById("shapeDisplay").innerText = "TEKAN TOMBOL";
+            document.getElementById("shapeDisplay").style.color = "#00d084";
+        } else {
+            document.getElementById("shapeDisplay").innerText = "JANGAN TEKAN TOMBOL";
+            document.getElementById("shapeDisplay").style.color = "#ff6b6b";
+        }
+    }
+
+    function displayStroopTrial(trial) {
+        const word = trial.word;
+        const color = trial.display_color;
+        const stroopWord = document.getElementById("stroopWord");
+        stroopWord.innerText = word;
+        stroopWord.style.color = color;
+        
+        const colorButtons = document.getElementById("colorButtons");
+        colorButtons.innerHTML = "";
+        
+        const colors = ["red", "blue", "green", "yellow", "purple"];
+        const colorHex = {
+            "red": "#FF0000",
+            "blue": "#0000FF",
+            "green": "#00AA00",
+            "yellow": "#FFFF00",
+            "purple": "#AA00AA"
+        };
+        const colorNames = {
+            "red": "MERAH",
+            "blue": "BIRU",
+            "green": "HIJAU",
+            "yellow": "KUNING",
+            "purple": "UNGU"
+        };
+        
+        colors.forEach(color => {
+            const btn = document.createElement("button");
+            btn.className = "color-btn";
+            btn.style.backgroundColor = colorHex[color];
+            btn.innerText = colorNames[color];
+            btn.onclick = () => submitStroop(color);
+            colorButtons.appendChild(btn);
+        });
+    }
+
+    async function submitGoNoGo(action) {
+        if (responseGiven) return;
+        responseGiven = true;
+        stopTrialTimer();
+        
+        // Disable button after response
+        document.getElementById("tombolButton").disabled = true;
+        
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_choice: isTrue })
+            body: JSON.stringify({ action: action })
         });
 
         let result = await response.json();
-        let resultElement = document.getElementById("result");
+        handleResponse(result);
+    }
+
+    async function submitStroop(colorAnswer) {
+        if (responseGiven) return;
+        responseGiven = true;
+        stopTrialTimer();
+        
+        // Disable all color buttons after response
+        const buttons = document.querySelectorAll('.color-btn');
+        buttons.forEach(btn => btn.disabled = true);
+        
+        let response = await fetch("/submit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ answer: colorAnswer })
+        });
+
+        let result = await response.json();
+        handleResponse(result);
+    }
+
+    function handleResponse(result) {
+        // Get the appropriate result element based on test type
+        let resultElement = testType === 'go_no_go' 
+            ? document.getElementById("resultGoNoGo") 
+            : document.getElementById("resultStroop");
 
         if (result.finished) {
-            resultElement.innerText = "Permainan Selesai! Skor Anda: " + result.score;
-            document.querySelector(".btn-container").style.display = "none";
-            document.getElementById("showScoresBtnContainer").style.display = "block";
+            if (result.final_results) {
+                // Both tests finished, redirect to final results
+                const resultsJSON = encodeURIComponent(JSON.stringify(result.all_scores));
+                window.location.href = `/test_results?results=${resultsJSON}`;
+            } else if (result.next_test === 'stroop') {
+                // Go/No-Go finished, proceed to Stroop instructions
+                window.location.href = `/test_instructions/stroop`;
+            } else {
+                // Fallback to final results
+                window.location.href = `/test_results`;
+            }
         } else {
-            resultElement.innerText = result.message;
-            resultElement.style.color = result.message.includes("✅") ? "green" : "red"; // ✅ Hijau, ❌ Merah
-            setTimeout(loadNextPair, 1000);
+            if (result.is_correct) {
+                resultElement.innerHTML = "✅ Benar!";
+                resultElement.className = "result-message result-correct";
+            } else {
+                resultElement.innerHTML = "❌ Salah!";
+                resultElement.className = "result-message result-wrong";
+            }
+            
+            // Add feedback for Stroop test showing user answer and correct answer
+            if (result.correct_answer) {
+                const colorNames = {
+                    "red": "MERAH",
+                    "blue": "BIRU",
+                    "green": "HIJAU",
+                    "yellow": "KUNING",
+                    "purple": "UNGU"
+                };
+                const correctColorName = colorNames[result.correct_answer];
+                
+                if (result.user_answer) {
+                    const userColorName = colorNames[result.user_answer];
+                    resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Jawaban: ${userColorName} | Benar: ${correctColorName}</small>`;
+                } else {
+                    // Timeout case - no user answer
+                    resultElement.innerHTML += `<br><small style="font-size: 0.9rem;">Waktu habis | Benar: ${correctColorName}</small>`;
+                }
+            }
+            
+            setTimeout(loadNextTrial, 1500);
         }
     }
-    
-    loadNextPair(); // Load pertanyaan pertama saat halaman dibuka
+
+    function showFinalResults(result) {
+        stopTrialTimer();
+        document.getElementById("showScoresBtnContainer").style.display = "block";
+        document.getElementById("goNoGoTest").style.display = "none";
+        document.getElementById("stroopTest").style.display = "none";
+        
+        const total = result.total || 20;
+        const correct = result.correct || 0;
+        const accuracy = Math.round((correct / total) * 100);
+        
+        document.getElementById("finalScore").innerText = result.score;
+        document.getElementById("accuracyText").innerText = `✓ ${correct}/${total} | Akurasi: ${accuracy}%`;
+    }
+
+    function updateQuestionCounter() {
+        document.getElementById("questionCounter").innerText = trialIndex + " / " + totalTrials;
+    }
+
+    // Initialize
+    if (testType === 'go_no_go') {
+        document.getElementById("testTitle").innerText = "🎯 Go/No-Go Task";
+        document.getElementById("goNoGoTest").style.display = "block";
+    } else if (testType === 'stroop') {
+        document.getElementById("testTitle").innerText = "🎨 Color Stroop Test";
+        document.getElementById("stroopTest").style.display = "block";
+    }
+
+    loadNextTrial();
 </script>
 
 </html>
