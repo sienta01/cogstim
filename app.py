@@ -1,7 +1,7 @@
 """
 Cognitive Stimulation Application
-Version: 2.1.0
-Release Date: January 28, 2026
+Version: 2.2.0
+Release Date: February 3, 2026
 Author: Development Team
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
@@ -12,16 +12,16 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import random
 
 # Application Version
-__version__ = "2.1.0"
-__release_date__ = "2026-01-28"
+__version__ = "2.2.0"
+__release_date__ = "2026-02-03"
 __app_name__ = "Cognitive Stimulation Assessment"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 # Go/No-Go Test Configuration
-GO_SHAPES = ["TEKAN"]  # Text button for GO action
-NO_GO_SHAPES = ["JANGAN TEKAN"]  # Text button for NO-GO action
+GO_SHAPES = ["JALAN"]  # Text button for GO action
+NO_GO_SHAPES = ["DIAM"]  # Text button for NO-GO action
 
 # Color Stroop Test Configuration
 COLORS = ["red", "blue", "green", "yellow", "purple"]
@@ -192,7 +192,7 @@ def practice(test_type):
     session["trial_index"] = 0
     session["is_practice"] = True
     
-    if ~_type == 'go_no_go':
+    if test_type == 'go_no_go':
         practice_trials = 3
         session["go_no_go_practice_trials"] = generate_go_no_go_trials(practice_trials)  # practice trials
         total_trials = practice_trials
@@ -327,9 +327,13 @@ def next_trial():
     """Get next trial for the current test"""
     test_type = session.get("test_type")
     trial_index = session.get("trial_index", 0)
+    is_practice = session.get("is_practice", False)
     
     if test_type == 'go_no_go':
-        trials = session.get("go_no_go_trials", [])
+        if is_practice:
+            trials = session.get("go_no_go_practice_trials", [])
+        else:
+            trials = session.get("go_no_go_trials", [])
         
         if trial_index >= len(trials):
             return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
@@ -342,7 +346,10 @@ def next_trial():
         })
     
     elif test_type == 'stroop':
-        trials = session.get("stroop_trials", [])
+        if is_practice:
+            trials = session.get("stroop_practice_trials", [])
+        else:
+            trials = session.get("stroop_trials", [])
         
         if trial_index >= len(trials):
             return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})

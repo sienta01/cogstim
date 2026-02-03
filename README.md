@@ -1,7 +1,7 @@
 # Cognitive Stimulation Assessment Platform
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
-![Release Date](https://img.shields.io/badge/release-2026--01--29-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)
+![Release Date](https://img.shields.io/badge/release-2026--02--03-brightgreen.svg)
 ![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.0+-red.svg)
 
@@ -347,25 +347,29 @@ Solution:
 
 ## 📝 Version Information
 
-### Current Version: 2.1.0
-- **Release Date**: January 28, 2026
+### Current Version: 2.2.1
+- **Release Date**: February 3, 2026
 - **Status**: Stable
-- **Last Updated**: 2026-01-28
+- **Last Updated**: 2026-02-03
 
 ### Version History
 See [CHANGELOG.md](./CHANGELOG.md) for complete version history and release notes.
 
-### Major Changes in v2.1.0
-- Added version tracking system
-- Enhanced documentation
-- Improved code organization
-- VERSION file for version management
+### Major Changes in v2.2.1
+- Documentation consolidation and cleanup
+- Removed redundant temporary files
+- Streamlined version tracking system
 
-### Major Changes in v2.0.0
-- **Application Redesign**: From emoji game to professional cognitive assessment
-- **New Tests**: Go/No-Go and Color Stroop
-- **Enhanced Tracking**: Accuracy and reaction time
-- **Improved UI**: Professional, responsive design
+### Major Changes in v2.2.0
+- **New Test**: Emoji Matching test integrated
+- **Practice Mode**: 3 practice trials for each test
+- **Ready Page**: Confirmation page after practice
+- **Improved Flow**: Go/No-Go → Stroop → Emoji Matching → Results
+
+### Major Changes in v2.1.0
+- Added version tracking infrastructure
+- VERSION file for easy access
+- CHANGELOG.md for complete history
 
 ---
 
@@ -466,7 +470,7 @@ cogstim/
 
 ---
 
-**Last Updated**: January 28, 2026  
-**Version**: 2.1.0  
+**Last Updated**: February 3, 2026  
+**Version**: 2.2.1  
 **Status**: Production Ready ✅
 

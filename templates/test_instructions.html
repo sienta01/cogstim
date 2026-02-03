@@ -7,26 +7,37 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #ffffff;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
         }
         
         .instruction-container {
-            background: white;
-            border-radius: 15px;
-            padding: 50px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            max-width: 700px;
+            background: transparent;
+            border-radius: 0;
+            padding: 20px;
+            box-shadow: none;
+            max-width: 600px;
             width: 100%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .test-number {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #999;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -34,52 +45,69 @@
         }
 
         .test-title {
-            font-size: 2.5rem;
+            font-size: 3rem;
+            line-height: 1.2;
             font-weight: bold;
-            color: #667eea;
-            margin-bottom: 30px;
+            color: #333;
+            margin-bottom: 10px;
         }
 
         .instruction-box {
             background: #f8f9fa;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #333;
             padding: 20px;
-            border-radius: 5px;
-            margin: 20px 0;
+            border-radius: 0;
+            margin: 40px 0;
         }
 
         .instruction-box h4 {
-            color: #667eea;
+            color: #333;
             margin-top: 0;
+            font-size: 1.6rem;
+            font-weight: bold;
         }
 
         .instruction-box ul {
             margin: 10px 0;
-            padding-left: 20px;
+            padding-left: 0;
+            list-style: none;
         }
 
         .instruction-box li {
-            margin: 10px 0;
-            line-height: 1.6;
+            margin: 20px 0;
+            line-height: 1.5;
+            font-size: 1.6rem;
+            color: #333;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .instruction-box li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+            font-size: 1.8rem;
+            color: #333;
         }
 
         .instruction-box .highlight {
             background: #fff3cd;
             padding: 2px 6px;
-            border-radius: 3px;
+            border-radius: 0;
             font-weight: bold;
         }
 
         .start-button {
             display: inline-block;
-            padding: 15px 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 35px;
+            background: #388e3c;
             color: white;
             text-decoration: none;
-            border-radius: 30px;
-            font-size: 1.1rem;
+            border-radius: 20px;
+            font-size: 2rem;
             font-weight: bold;
-            margin-top: 30px;
+            margin-top: 20px;
             transition: all 0.3s ease;
             border: none;
             cursor: pointer;
@@ -87,13 +115,13 @@
 
         .start-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(0, 208, 132, 0.2);
             text-decoration: none;
             color: white;
         }
 
         .emoji-icon {
-            font-size: 2.5rem;
+            font-size: 3.5rem;
             margin-right: 10px;
         }
 
@@ -105,12 +133,12 @@
         .example-section {
             background: #e8eaf6;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 0;
             margin: 20px 0;
         }
 
         .example-section h5 {
-            color: #667eea;
+            color: #333;
             margin-top: 0;
         }
     </style>
@@ -127,23 +155,17 @@
         <div class="instruction-box">
             <h4>Cara bermain:</h4>
             <ul>
-                <li>Anda akan melihat 20 layar berisi teks</li>
-                <li>Jika layar menampilkan <span class="highlight">TEKAN TOMBOL</span> → <strong style="color: #00d084;">tekan tombol</strong> dengan cepat</li>
-                <li>Jika layar menampilkan <span class="highlight">JANGAN TEKAN TOMBOL</span> → <strong style="color: #ff6b6b;">JANGAN tekan tombol</strong></li>
-                <li>Setiap respons yang benar mendapat poin</li>
-                <li>Kecepatan dan akurasi sama pentingnya</li>
+                <li>Pada layar, Anda akan melihat 2 kata berbeda pada layar, dan akan diulang sebanyak 10 kali.</li>
+                <li>Ketuk kotak hitam bila muncul kata <span class="highlight">JALAN</span></li>
+                <li>Jangan ketuk apa pun bila muncul kata <span class="highlight">DIAM</span></li>
+                <li>Setiap jawaban yang benar mendapat poin.</li>
+                <li>Ketepatan menekan tombol sangat penting.</li>
             </ul>
         </div>
 
-        <div class="example-section">
-            <h5>📌 Contoh:</h5>
-            <p><strong style="color: #00d084; font-size: 1.5rem;">TEKAN TOMBOL</strong> → ✓ Tekan tombol!</p>
-            <p><strong style="color: #ff6b6b; font-size: 1.5rem;">JANGAN TEKAN TOMBOL</strong> → ✗ Tunggu, jangan tekan!</p>
-        </div>
-
         <div style="display: flex; gap: 15px; margin-top: 30px;">
-            <button class="start-button" onclick="window.location.href='/practice/go_no_go'" style="background: #FFA500; flex: 1;">🎯 Latihan (3 soal)</button>
-            <button class="start-button" onclick="window.location.href='/game/go_no_go'" style="flex: 1;">Mulai Go/No-Go Test →</button>
+            <button class="start-button" onclick="window.location.href='/practice/go_no_go'" style="background: #FFA500; flex: 1;">Latihan (3 soal)</button>
+            <button class="start-button" onclick="window.location.href='/game/go_no_go'" style="flex: 1;">Mulai →</button>
         </div>
 
         {% elif test_type == 'stroop' %}
@@ -156,55 +178,35 @@
         <div class="instruction-box">
             <h4>Cara bermain:</h4>
             <ul>
-                <li>Anda akan melihat kata warna yang <strong>TIDAK sesuai</strong> dengan warna tulisannya</li>
-                <li><strong style="background: #fff3cd; padding: 2px 6px;">Penting:</strong> Pilih warna TULISAN, bukan arti kata!</li>
-                <li>Contoh: Kata "<span style="color: blue; font-weight: bold;">MERAH</span>" ditulis dengan warna biru → jawab <strong>BIRU</strong></li>
-                <li>Akan ada 20 pertanyaan</li>
-                <li>Pastikan akurat - kecepatan sekunder</li>
+                <li>Pada layar, Anda akan melihat tulisan berwarna.</li>
+                <li>Ketuklah <strong>warna</strong> dari kata yang ditampilkan, abaikan arti kata tersebut.</li>
             </ul>
         </div>
 
-        <div class="example-section">
-            <h5>📌 Contoh:</h5>
-            <p style="font-size: 1.5rem;"><span style="color: green; font-weight: bold;">MERAH</span></p>
-            <p>← Kata ini artinya "MERAH" tapi ditulis dengan warna <strong>HIJAU</strong></p>
-            <p>✓ Jawaban yang benar: <strong>HIJAU</strong> (pilih warna tulisan, bukan arti kata)</p>
-        </div>
-
         <div style="display: flex; gap: 15px; margin-top: 30px;">
-            <button class="start-button" onclick="window.location.href='/practice/stroop'" style="background: #FFA500; flex: 1;">🎯 Latihan (3 soal)</button>
-            <button class="start-button" onclick="window.location.href='/game/stroop'" style="flex: 1;">Mulai Color Stroop Test →</button>
+            <button class="start-button" onclick="window.location.href='/practice/stroop'" style="background: #FFA500; flex: 1;">Latihan (3 soal)</button>
+            <button class="start-button" onclick="window.location.href='/game/stroop'" style="flex: 1;">Mulai →</button>
         </div>
 
         {% elif test_type == 'emoji' %}
         <div class="test-number">Tugas 3</div>
         <div class="title-with-emoji">
             <span class="emoji-icon">🎭</span>
-            <div class="test-title">Tes Pencocokan Emoji</div>
+            <div class="test-title">Tes Pencocokan Gambar</div>
         </div>
 
         <div class="instruction-box">
             <h4>Cara bermain:</h4>
             <ul>
-                <li>Anda akan melihat emoji dan sebuah deskripsi</li>
-                <li>Tentukan apakah deskripsi itu <strong>BENAR</strong> atau <strong>SALAH</strong> untuk emoji tersebut</li>
-                <li>Contoh: 😀 = "Wajah" → <strong>BENAR</strong></li>
-                <li>Contoh: 🚗 = "Burung" → <strong>SALAH</strong></li>
-                <li>Akan ada 10 pertanyaan</li>
-                <li>Pastikan akurat - kecepatan sekunder</li>
+                <li>Pada layar, Anda akan melihat gambar beserta artinya.</li>
+                <li>Ketuk <strong style="color: #00d084;">BENAR</strong> apabila gambar dan arti <strong>sesuai</strong>.</li>
+                <li>Ketuk <strong style="color: #ff6b6b;">SALAH</strong> apabila gambar dan arti <strong>tidak sesuai</strong>.</li>
             </ul>
         </div>
 
-        <div class="example-section">
-            <h5>📌 Contoh:</h5>
-            <p style="font-size: 3rem;">😀</p>
-            <p style="font-size: 1.5rem;"><strong>Wajah</strong></p>
-            <p>✓ Jawaban yang benar: <strong>BENAR</strong> (😀 memang adalah wajah)</p>
-        </div>
-
         <div style="display: flex; gap: 15px; margin-top: 30px;">
-            <button class="start-button" onclick="window.location.href='/practice/emoji'" style="background: #FFA500; flex: 1;">🎯 Latihan (3 soal)</button>
-            <button class="start-button" onclick="window.location.href='/game/emoji'" style="flex: 1;">Mulai Emoji Test →</button>
+            <button class="start-button" onclick="window.location.href='/practice/emoji'" style="background: #FFA500; flex: 1;">Latihan (3 soal)</button>
+            <button class="start-button" onclick="window.location.href='/game/emoji'" style="flex: 1;">Mulai →</button>
         </div>
 
         {% endif %}

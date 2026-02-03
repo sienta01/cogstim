@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.2.1] - 2026-02-03
+
+### Added
+- Version tracking consolidation
+- Improved documentation organization
+
+### Changed
+- Updated version constants across all modules
+- Documentation structure streamlined
+- Removed redundant documentation files
+
+### Fixed
+- Documentation maintenance and cleanup
+- Deleted duplicate/temporary files
+
+### Documentation
+- Updated all version references to 2.2.1
+- Cleaned up documentation index
+- Consolidated version tracking
+
+---
+
 ## [2.2.0] - 2026-01-29
 
 ### Added
