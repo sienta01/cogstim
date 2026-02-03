@@ -38,22 +38,22 @@
         }
 
         .ready-icon {
-            font-size: 8rem;
-            margin-bottom: 30px;
+            font-size: 4rem;
+            margin-bottom: 10px;
         }
 
         .ready-title {
-            font-size: 4rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .ready-subtitle {
-            font-size: 2rem;
+            font-size: 1.6rem;
             color: #666;
-            margin-bottom: 40px;
-            line-height: 1.6;
+            margin-bottom: 10px;
+            line-height: 1.2s;
         }
 
         .ready-button {
@@ -116,8 +116,10 @@
             margin-top: 0;
             font-size: 1.5rem;
             font-weight: bold;
+        }
 
         .tips-section ul {
+            font-size: 1.5rem;
             margin: 10px 0;
             padding-left: 20px;
         }
@@ -143,6 +145,7 @@
         </div>
 
         {% if test_type == 'go_no_go' %}
+        <!--
         <div class="practice-summary">
             <h4>📝 Tes Kecekatan</h4>
             <ul>
@@ -152,6 +155,7 @@
                 <li>Waktu per soal: <strong>5 detik</strong></li>
             </ul>
         </div>
+        -->
 
         <div class="tips-section">
             <h5>💡 Tips:</h5>
@@ -166,6 +170,7 @@
         </button>
 
         {% elif test_type == 'stroop' %}
+        <!--
         <div class="practice-summary">
             <h4>🎨 Tes Warna Stroop</h4>
             <ul>
@@ -175,13 +180,13 @@
                 <li>Waktu per soal: <strong>5 detik</strong></li>
             </ul>
         </div>
+        -->
 
         <div class="tips-section">
             <h5>💡 Tips:</h5>
             <ul>
                 <li>Abaikan arti kata, fokus pada warna tulisan</li>
                 <li>Ingat: ini adalah TES WARNA, bukan tes membaca</li>
-                <li>Akurasi lebih penting daripada kecepatan</li>
             </ul>
         </div>
 
@@ -190,6 +195,7 @@
         </button>
 
         {% elif test_type == 'emoji' %}
+        <!--
         <div class="practice-summary">
             <h4>🎭 Tes Pencocokan Emoji</h4>
             <ul>
@@ -199,18 +205,18 @@
                 <li>Waktu per soal: <strong>5 detik</strong></li>
             </ul>
         </div>
+        -->
 
         <div class="tips-section">
             <h5>💡 Tips:</h5>
             <ul>
                 <li>Pelajari makna setiap emoji dengan cermat</li>
                 <li>Jangan tergesa-gesa dalam menjawab</li>
-                <li>Akurasi adalah prioritas utama</li>
             </ul>
         </div>
 
         <button class="ready-button" onclick="window.location.href='/game/emoji'">
-            Mulai Tes Emoji →
+            Mulai Tes Pencocokan Gambar →
         </button>
 
         {% endif %}
