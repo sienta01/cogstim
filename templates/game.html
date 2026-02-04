@@ -12,7 +12,7 @@
 
     <style>
         html {
-            overflow: hidden;
+            overflow: auto;
         }
         
         * {
@@ -28,9 +28,9 @@
             padding: 0;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-            overflow: hidden;
+            overflow: auto;
         }
         
         .game-container {
@@ -41,10 +41,11 @@
             max-width: 600px;
             width: 100%;
             position: relative;
-            min-height: 100vh;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
+            overflow-y: auto;
         }
 
         .question-counter {
@@ -109,7 +110,7 @@
 
         .go-btn {
             padding: 80px 80px;
-            margin: 30px 0px;
+            margin-bottom: 40px;
             font-size: 2rem;
             border: none;
             border-radius: 20px;
@@ -165,7 +166,7 @@
             font-size: 6rem;
             font-weight: bold;
             letter-spacing: 1px;
-            margin: 80px 3px;
+            margin: 80px 0 70px 0;
             animation: slideIn 0.3s ease;
             min-height: 80px;
             height: 80px;
@@ -180,9 +181,8 @@
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
-            margin-top: 30px;
-            min-height: 120px;
-            height: 120px;
+            margin-top: 50px;
+            margin-bottom: 10px;
             align-items: center;
         }
 
@@ -208,11 +208,12 @@
         .result-message {
             font-size: 1.5rem;
             font-weight: bold;
-            margin-top: 20px;
-            /* min-height: 100px; */
+            margin-top: 40px;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
+            flex-direction: column;
+            line-height: 1.2;
         }
 
         .result-correct {
@@ -354,7 +355,9 @@
         <div id="stroopTest" style="display:none;">
             <div class="stroop-word" id="stroopWord"></div>
             <div class="color-buttons" id="colorButtons"></div>
-            <p id="resultStroop" class="result-message" style="margin-bottom: 10px;"></p>
+            <div class="feedback-section" id="feedbackSection" style="display:none; margin-top: 30px;">
+                <p id="resultStroop" class="result-message"></p>
+            </div>
         </div>
 
         <!-- Emoji Matching Test -->
@@ -455,6 +458,7 @@
         document.getElementById("colorButtons").innerHTML = "";
         document.getElementById("emojiDisplay").innerText = "";
         document.getElementById("descriptionDisplay").innerText = "";
+        document.getElementById("feedbackSection").style.display = "none";
         
         // Wait before showing new trial
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -605,7 +609,19 @@
             if (result.is_correct) {
                 if (testType === 'emoji') {
                     const correctName = emojiNames[currentTrial.emoji] || currentTrial.description;
-                    resultElement.innerHTML = `Jawaban benar.<br>Ini adalah ${correctName}.`;
+                    resultElement.innerHTML = `<div>Benar</div><div>Ini adalah ${correctName}.</div>`;
+                } else if (testType === 'stroop') {
+                    const colorHex = currentTrial.display_color;
+                    const colorHexMap = {
+                        "#FF0000": "warna merah",
+                        "#0000FF": "warna biru",
+                        "#00AA00": "warna hijau",
+                        "#FFFF00": "warna kuning",
+                        "#AA00AA": "warna ungu"
+                    };
+                    const correctColorName = colorHexMap[colorHex] || colorHex;
+                    resultElement.innerHTML = `<div>Benar</div><div>Ini adalah ${correctColorName}.</div>`;
+                    document.getElementById("feedbackSection").style.display = "block";
                 } else {
                     resultElement.innerHTML = "Benar";
                 }
@@ -613,7 +629,19 @@
             } else {
                 if (testType === 'emoji') {
                     const correctName = emojiNames[currentTrial.emoji] || currentTrial.description;
-                    resultElement.innerHTML = `Jawaban salah.<br>Ini adalah ${correctName}.`;
+                    resultElement.innerHTML = `<div>Salah</div><div>Ini adalah ${correctName}.</div>`;
+                } else if (testType === 'stroop') {
+                    const colorHex = currentTrial.display_color;
+                    const colorHexMap = {
+                        "#FF0000": "warna merah",
+                        "#0000FF": "warna biru",
+                        "#00AA00": "warna hijau",
+                        "#FFFF00": "warna kuning",
+                        "#AA00AA": "warna ungu"
+                    };
+                    const correctColorName = colorHexMap[colorHex] || colorHex;
+                    resultElement.innerHTML = `<div>Salah</div><div>Ini adalah ${correctColorName}.</div>`;
+                    document.getElementById("feedbackSection").style.display = "block";
                 } else {
                     resultElement.innerHTML = "Salah";
                 }
