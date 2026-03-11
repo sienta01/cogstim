@@ -1,7 +1,7 @@
 """
 Cognitive Stimulation Application
-Version: 2.2.0
-Release Date: February 3, 2026
+Version: 2.3.0
+Release Date: March 11, 2026
 Author: Development Team
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
@@ -10,11 +10,14 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
+import os
+import re
+import datetime
 
 # Application Version
-__version__ = "2.2.0"
-__release_date__ = "2026-02-03"
-__app_name__ = "Cognitive Stimulation Assessment"
+__version__ = "2.3.0"
+
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -40,30 +43,22 @@ COLOR_HEX = {
     "purple": "#AA00AA"
 }
 
-# Emoji Matching Test Configuration
-EMOJI_SET = [
-    {"emoji": "😀", "description": "Wajah"},
-    {"emoji": "🚗", "description": "Mobil"},
-    {"emoji": "🍎", "description": "Apel"},
-    {"emoji": "🐶", "description": "Anjing"},
-    {"emoji": "⚽", "description": "Bola"},
-    {"emoji": "🌞", "description": "Matahari"},
-    {"emoji": "📚", "description": "Buku"},
-    {"emoji": "🎸", "description": "Gitar"},
-    {"emoji": "✈️", "description": "Pesawat"},
-    {"emoji": "🎂", "description": "Kue"}
-]
+# Emoji Matching Test Configuration — loaded from emoji_names.js (single source of truth)
+def load_emoji_set():
+    """Load emoji data from static/emoji_names.js so it remains the single source of truth."""
+    js_path = os.path.join(BASE_DIR, 'static', 'emoji_names.js')
+    with open(js_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    pairs = re.findall(r"'([^']+)':\s*'([^']+)'", content)
+    return [{"emoji": emoji, "description": name} for emoji, name in pairs]
 
-import os
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+EMOJI_SET = load_emoji_set()
 
 # Use absolute path for PythonAnywhere compatibility
 # On PythonAnywhere, use home directory to avoid I/O issues
 DB_PATH = os.path.expanduser('~/cogstim_data/database.db')
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
-# old config
-# app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'database.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -73,20 +68,10 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-
-    # Relationship to Patient
-    patients = db.relationship('Patient', backref='user', lazy=True)
-
-# Patient Model
-class Patient(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    age = db.Column(db.Integer, nullable=True)
-    notes = db.Column(db.Text, nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
 
     # Relationship to Score
-    scores = db.relationship('Score', backref='patient', lazy=True)
+    scores = db.relationship('Score', backref='user', lazy=True)
 
 # Score Model
 class Score(db.Model):
@@ -96,7 +81,7 @@ class Score(db.Model):
     reaction_time = db.Column(db.Float, nullable=True)  # in milliseconds
     accuracy = db.Column(db.Float, nullable=True)  # percentage
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
-    patient_id = db.Column(db.Integer, db.ForeignKey('patient.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 # Dashboard route
 @app.route("/dashboard")
@@ -104,32 +89,14 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
     user = User.query.get(session["user_id"])
-    patients = Patient.query.filter_by(user_id=user.id).all() if user else []
-    import datetime
+    user_scores = Score.query.filter_by(user_id=user.id).order_by(Score.timestamp.desc()).limit(10).all() if user else []
     now = datetime.datetime.now()
     username = user.username if user else ""
-    return render_template("dashboard.html", patients=patients, now=now, username=username)
-
-# Add Patient route
-@app.route("/add_patient", methods=["POST"])
-def add_patient():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    name = request.form.get("name")
-    age = request.form.get("age")
-    notes = request.form.get("notes")
-    if not name:
-        flash("Patient name is required.")
-        return redirect(url_for("dashboard"))
-    patient = Patient(name=name, age=age, notes=notes, user_id=session["user_id"])
-    db.session.add(patient)
-    db.session.commit()
-    flash("Patient added successfully.")
-    return redirect(url_for("dashboard"))
+    is_admin = session.get("is_admin", False)
+    return render_template("dashboard.html", scores=user_scores, now=now, username=username, is_admin=is_admin)
 
 @app.route("/reference")
 def reference():
-    session["reference_shown"] = True
     return render_template("reference.html")
 
 @app.route("/test_instructions/<test_type>")
@@ -145,7 +112,7 @@ def test_instructions(test_type):
 def select_test():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    # Initialize test sequence
+    # Initialize test sequence — user plays as themselves
     session["completed_tests"] = []
     session["test_scores"] = {}
     return redirect(url_for("test_instructions", test_type="go_no_go"))
@@ -293,9 +260,10 @@ def login():
         password = request.form["password"]
         user = User.query.filter_by(username=username).first()
         if not user:
-            flash("No user found, please register.")
+            flash("Pengguna tidak ditemukan, silakan daftar.")
         elif check_password_hash(user.password_hash, password):
             session["user_id"] = user.id
+            session["is_admin"] = user.is_admin
             return redirect(url_for("dashboard"))
         else:
             flash("Username atau password salah.")
@@ -363,7 +331,6 @@ def next_trial():
         })
     
     elif test_type == 'emoji':
-        is_practice = session.get("is_practice", False)
         if is_practice:
             trials = session.get("emoji_practice_trials", [])
         else:
@@ -383,7 +350,7 @@ def next_trial():
 
 @app.route("/submit", methods=["POST"])
 def submit():
-    if "user_id" not in session or "selected_patient_id" not in session:
+    if "user_id" not in session:
         return redirect(url_for("login"))
 
     data = request.get_json()
@@ -412,7 +379,7 @@ def submit():
         session["total_count"] += 1
         if is_correct:
             session["correct_count"] += 1
-            session["score"] += 5
+            session["score"] += 10
             result_message = "✅ Benar!"
         else:
             result_message = "❌ Salah!"
@@ -439,7 +406,7 @@ def submit():
         session["total_count"] += 1
         if is_correct:
             session["correct_count"] += 1
-            session["score"] += 5
+            session["score"] += 10
             result_message = "✅ Benar!"
         else:
             result_message = "❌ Salah!"
@@ -461,7 +428,7 @@ def submit():
         session["total_count"] += 1
         if is_correct:
             session["correct_count"] += 1
-            session["score"] += 5
+            session["score"] += 10
             result_message = "✅ Benar!"
         else:
             result_message = "❌ Salah!"
@@ -490,17 +457,15 @@ def submit():
             session["test_scores"] = test_scores
             
             # Save score to database
-            selected_patient_id = session.get("selected_patient_id")
-            if selected_patient_id:
-                accuracy = (session["correct_count"] / session["total_count"] * 100) if session["total_count"] > 0 else 0
-                new_score = Score(
-                    score=session["score"],
-                    test_type=test_type,
-                    accuracy=accuracy,
-                    patient_id=selected_patient_id
-                )
-                db.session.add(new_score)
-                db.session.commit()
+            accuracy = (session["correct_count"] / session["total_count"] * 100) if session["total_count"] > 0 else 0
+            new_score = Score(
+                score=session["score"],
+                test_type=test_type,
+                accuracy=accuracy,
+                user_id=session["user_id"]
+            )
+            db.session.add(new_score)
+            db.session.commit()
             
             # Check what test comes next
             completed_tests = session.get("completed_tests", [])
@@ -511,6 +476,8 @@ def submit():
                 # Go/No-Go finished, proceed to Stroop
                 return jsonify({
                     "finished": True,
+                    "is_correct": is_correct,
+                    "message": result_message,
                     "next_test": "stroop",
                     "redirect_url": "/test_instructions/stroop"
                 })
@@ -518,6 +485,8 @@ def submit():
                 # Stroop finished, proceed to Emoji matching
                 return jsonify({
                     "finished": True,
+                    "is_correct": is_correct,
+                    "message": result_message,
                     "next_test": "emoji",
                     "redirect_url": "/test_instructions/emoji"
                 })
@@ -525,6 +494,8 @@ def submit():
                 # All tests finished, show final results
                 return jsonify({
                     "finished": True,
+                    "is_correct": is_correct,
+                    "message": result_message,
                     "final_results": True,
                     "all_scores": test_scores
                 })
@@ -566,68 +537,15 @@ def scores():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    # Show scores for all patients of this user
-    patients = Patient.query.filter_by(user_id=session["user_id"]).all()
-    patient_ids = [p.id for p in patients]
-    user_scores = Score.query.filter(Score.patient_id.in_(patient_ids)).order_by(Score.timestamp.desc()).limit(100).all()
-    return render_template("scores.html", scores=user_scores)
+    is_admin = session.get("is_admin", False)
+    if is_admin:
+        # Admin can see all scores from all users
+        user_scores = Score.query.order_by(Score.timestamp.desc()).limit(200).all()
+    else:
+        # Normal user sees only their own scores
+        user_scores = Score.query.filter_by(user_id=session["user_id"]).order_by(Score.timestamp.desc()).limit(100).all()
+    return render_template("scores.html", scores=user_scores, is_admin=is_admin)
 
-# Select Patient route
-@app.route("/select_patient/<int:patient_id>")
-def select_patient(patient_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
-    if not patient:
-        flash("Patient not found.")
-        return redirect(url_for("dashboard"))
-    session["selected_patient_id"] = patient.id
-    session["selected_patient_name"] = patient.name
-    return redirect(url_for("select_test"))
-
-# View Patient Scores route
-@app.route("/view_patient_scores/<int:patient_id>")
-def view_patient_scores(patient_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
-    if not patient:
-        flash("Patient not found.")
-        return redirect(url_for("dashboard"))
-    scores = Score.query.filter_by(patient_id=patient.id).order_by(Score.timestamp.desc()).all()
-    return render_template("scores.html", scores=scores, patient=patient)
-
-# Edit Patient route
-@app.route("/edit_patient/<int:patient_id>", methods=["GET", "POST"])
-def edit_patient(patient_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
-    if not patient:
-        flash("Patient not found.")
-        return redirect(url_for("dashboard"))
-    if request.method == "POST":
-        patient.name = request.form.get("name")
-        patient.age = request.form.get("age")
-        patient.notes = request.form.get("notes")
-        db.session.commit()
-        flash("Patient updated successfully.")
-        return redirect(url_for("dashboard"))
-    return render_template("edit_patient.html", patient=patient)
-
-# Delete Patient route
-@app.route("/delete_patient/<int:patient_id>")
-def delete_patient(patient_id):
-    if "user_id" not in session:
-        return redirect(url_for("login"))
-    patient = Patient.query.filter_by(id=patient_id, user_id=session["user_id"]).first()
-    if not patient:
-        flash("Patient not found.")
-        return redirect(url_for("dashboard"))
-    db.session.delete(patient)
-    db.session.commit()
-    flash("Patient deleted successfully.")
-    return redirect(url_for("dashboard"))
 
 with app.app_context():
     db.create_all()  # Create database tables if they don't exist

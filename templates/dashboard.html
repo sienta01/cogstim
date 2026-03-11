@@ -1,9 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <style>
@@ -12,115 +15,295 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
+            background: #f5f7fa;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+
+        .dashboard-card {
+            max-width: 680px;
+            margin: 24px auto;
+            padding: 28px;
             background: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
         }
-        
-        .container {
-            margin-top: 20px;
-            padding: 0 20px;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
         }
-        
-        .section-title {
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            color: #333;
+
+        .greeting-message {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1.2;
         }
-        
-        .patient-table th, .patient-table td {
-            font-size: 0.95rem;
-            padding: 12px;
+
+        .admin-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a7bec, #3a5bc7);
+            color: #fff;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 20px;
+            vertical-align: middle;
+            margin-left: 8px;
         }
-        
-        .patient-table th {
-            background: #333;
-            color: white;
-        }
-        
-        .btn {
-            border-radius: 15px;
+
+        .logout-btn {
+            border-radius: 12px;
+            background: #e74c3c;
             font-size: 0.9rem;
-            padding: 8px 15px;
+            font-weight: 600;
+            height: 36px;
+            line-height: 36px;
+            padding: 0 20px;
         }
-        
-        .input-field {
-            margin-bottom: 15px;
+
+        .logout-btn:hover {
+            background: #c0392b;
         }
-        
-        .input-field input,
-        .input-field textarea {
-            border-radius: 0;
+
+        .divider {
             border: none;
-            border-bottom: 2px solid #333;
+            border-top: 2px solid #eef2ff;
+            margin: 16px 0 24px;
+        }
+
+        /* Start Game Button */
+        .start-game-section {
+            text-align: center;
+            margin: 28px 0;
+        }
+
+        .start-game-btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #43b581 0%, #2d8f5e 100%);
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding: 18px 48px;
+            border-radius: 16px;
+            text-decoration: none;
+            letter-spacing: 0.5px;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 16px rgba(67, 181, 129, 0.3);
+        }
+
+        .start-game-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(67, 181, 129, 0.4);
+            color: #fff;
+        }
+
+        .start-game-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Admin scores link */
+        .admin-scores-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #4a7bec, #3a5bc7);
+            color: #fff;
             font-size: 0.95rem;
+            font-weight: 600;
+            padding: 10px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+        }
+
+        .admin-scores-link:hover {
+            box-shadow: 0 4px 16px rgba(74, 123, 236, 0.3);
+            color: #fff;
+        }
+
+        /* Scores section */
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 14px;
+        }
+
+        .no-scores-msg {
+            text-align: center;
+            padding: 30px 20px;
+            color: #888;
+            font-size: 1.05rem;
+        }
+
+        .score-table {
+            margin-top: 8px;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .score-table th,
+        .score-table td {
+            font-size: 0.9rem;
+            padding: 11px 12px;
+        }
+
+        .score-table th {
+            background: #1a1a2e;
+            color: white;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .score-table tbody tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .score-table tbody tr:hover {
+            background: #eef2ff;
+        }
+
+        .test-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .test-badge.go-no-go {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .test-badge.stroop {
+            background: #e8eaf6;
+            color: #283593;
+        }
+
+        .test-badge.emoji {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .view-all-link {
+            display: block;
+            text-align: center;
+            margin-top: 14px;
+            color: #4a7bec;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .dashboard-card {
+                padding: 16px;
+            }
+
+            .greeting-message {
+                font-size: 1.5rem;
+            }
+
+            .start-game-btn {
+                font-size: 1.1rem;
+                padding: 14px 36px;
+            }
+
+            .score-table th,
+            .score-table td {
+                font-size: 0.82rem;
+                padding: 9px 8px;
+            }
         }
     </style>
 </head>
-<body>
 
-<div class="container">
-    <div style="text-align:right; margin-bottom:10px;">
-        <a href="/logout" class="btn red">Logout</a>
+<body>
+    <div class="dashboard-card">
+        <!-- Header: greeting + logout -->
+        <div class="header-row">
+            <div>
+                {% set hour = now.hour %}
+                {% if hour < 12 %} {% set greeting='Selamat pagi' %} {% elif hour < 18 %} {% set
+                    greeting='Selamat siang' %} {% else %} {% set greeting='Selamat malam' %} {% endif %} <div
+                    class="greeting-message">
+                    {{ greeting }}, {{ username }}!
+                    {% if is_admin %}
+                    <span class="admin-badge">🛡️ Admin</span>
+                    {% endif %}
+            </div>
+        </div>
+        <a href="/logout" class="btn logout-btn">Keluar</a>
     </div>
 
-    {% set hour = now.hour %}
-    {% if hour < 12 %}
-        {% set greeting = 'Good morning' %}
-    {% elif hour < 18 %}
-        {% set greeting = 'Good afternoon' %}
-    {% else %}
-        {% set greeting = 'Good evening' %}
+    <hr class="divider">
+
+    {% if is_admin %}
+    <div style="margin-bottom: 16px;">
+        <a href="/scores" class="admin-scores-link">📊 Lihat Semua Skor</a>
+    </div>
     {% endif %}
-    <div class="greeting-message" style="font-size:2.5rem; font-weight:bold; margin-bottom:20px;">{{ greeting }}, {{ username }}!</div>
 
-    <hr>
-    <h3 class="section-title">Patient Management</h3>
-    <form method="POST" action="/add_patient">
-        <div class="input-field">
-            <input type="text" name="name" required>
-            <label>Patient Name</label>
-        </div>
-        <div class="input-field">
-            <input type="number" name="age">
-            <label>Age</label>
-        </div>
-        <div class="input-field">
-            <textarea name="notes" class="materialize-textarea"></textarea>
-            <label>Notes</label>
-        </div>
-        <button class="btn green" type="submit">Add Patient</button>
-    </form>
+    <!-- Start Game Button -->
+    <div class="start-game-section">
+        <a href="/select_test" class="start-game-btn" id="startGameBtn">🎮 Mulai Tes</a>
+    </div>
 
-    <table class="patient-table highlight centered" style="margin-top:30px;">
+    <hr class="divider">
+
+    <!-- Recent Scores -->
+    <h4 class="section-title">📋 Riwayat Skor Anda</h4>
+
+    {% if scores|length == 0 %}
+    <div class="no-scores-msg">
+        Belum ada skor. Tekan <strong>Mulai Tes</strong> untuk memulai!
+    </div>
+    {% else %}
+    <table class="score-table highlight centered">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Age</th>
-                <th>Notes</th>
-                <th>Actions</th>
+                <th>Tipe Tes</th>
+                <th>Skor</th>
+                <th>Akurasi</th>
+                <th>Waktu</th>
             </tr>
         </thead>
         <tbody>
-            {% for patient in patients %}
+            {% for score in scores %}
             <tr>
-                <td>{{ patient.name }}</td>
-                <td>{{ patient.age }}</td>
-                <td>{{ patient.notes }}</td>
                 <td>
-                    <a href="/edit_patient/{{ patient.id }}" class="btn-small orange">Edit</a>
-                    <a href="/delete_patient/{{ patient.id }}" class="btn-small red" onclick="return confirm('Delete this patient?');">Delete</a>
-                    <a href="/select_patient/{{ patient.id }}" class="btn-small blue">Select</a>
-                    <a href="/view_patient_scores/{{ patient.id }}" class="btn-small purple">View Score</a>
+                    {% if score.test_type == 'go_no_go' %}
+                    <span class="test-badge go-no-go">🎯 Go/No-Go</span>
+                    {% elif score.test_type == 'stroop' %}
+                    <span class="test-badge stroop">🎨 Stroop</span>
+                    {% elif score.test_type == 'emoji' %}
+                    <span class="test-badge emoji">😀 Emoji</span>
+                    {% else %}
+                    {{ score.test_type }}
+                    {% endif %}
                 </td>
+                <td><strong>{{ score.score }}</strong></td>
+                <td>{% if score.accuracy %}{{ "%.1f"|format(score.accuracy) }}%{% else %}-{% endif %}</td>
+                <td>{{ score.timestamp.strftime('%d/%m/%Y %H:%M') if score.timestamp else '-' }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-</div>
+    <a href="/scores" class="view-all-link">Lihat semua skor →</a>
+    {% endif %}
+    </div>
 </body>
+
 </html>

@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] - 2026-03-11
+
+### Added
+- Geriatric-friendly UI elements with large fonts and high contrast
+- Role-based score visibility (Admin sees all scores, Users see their own)
+- User role support in the backend
+
+### Changed
+- Dashboard redesign to focus on user scores instead of patient management
+- Cleaned up and optimized codebase, removing unused files and code
+- Improved button styling and UI responsiveness across login, registration, scores, and dashboard pages
+
+### Fixed
+- Fixed back button styling on the scores page
+
+---
+
 ## [2.2.1] - 2026-02-03
 
 ### Added
@@ -144,7 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Compatibility
 
-### Current Version: 2.1.0
+### Current Version: 2.3.0
 - Python 3.7+
 - Flask 2.0+
 - SQLAlchemy compatible
@@ -157,6 +174,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## Release Notes
+
+### v2.3.0 Release Notes
+- Complete dashboard redesign removing patient management modules
+- Redesign focusing on geriatric accessibility (large fonts, high contrast)
+- Introduced User/Admin roles for score isolation
+- Codebase optimization
 
 ### v2.1.0 Release Notes
 - Focus on documentation and code organization

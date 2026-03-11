@@ -1,7 +1,7 @@
 # Cognitive Stimulation Assessment Platform
 
-![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)
-![Release Date](https://img.shields.io/badge/release-2026--02--03-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![Release Date](https://img.shields.io/badge/release-2026--03--11-brightgreen.svg)
 ![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.0+-red.svg)
 
@@ -347,13 +347,19 @@ Solution:
 
 ## 📝 Version Information
 
-### Current Version: 2.2.1
-- **Release Date**: February 3, 2026
+### Current Version: 2.3.0
+- **Release Date**: March 11, 2026
 - **Status**: Stable
-- **Last Updated**: 2026-02-03
+- **Last Updated**: 2026-03-11
 
 ### Version History
 See [CHANGELOG.md](./CHANGELOG.md) for complete version history and release notes.
+
+### Major Changes in v2.3.0
+- **Dashboard Redesign**: Simplified dashboard to focus on user scores instead of patient management
+- **Geriatric UI**: Designed a geriatric-friendly login and interface with high contrast and larger fonts
+- **Role-Based Access**: Implemented admin vs normal user roles for score visibility
+- **Code Optimization**: Cleaned up the codebase, removing unused files and optimizing code
 
 ### Major Changes in v2.2.1
 - Documentation consolidation and cleanup
@@ -415,10 +421,10 @@ For commercial use, contact the development team.
 ## 👥 Development Team
 
 **Cognitive Stimulation Assessment Platform**
-- Version: 2.1.0
+- Version: 2.3.0
 - Framework: Flask + SQLAlchemy + SQLite
 - Python: 3.7+
-- Last Updated: January 28, 2026
+- Last Updated: March 11, 2026
 
 ---
 
@@ -470,7 +476,7 @@ cogstim/
 
 ---
 
-**Last Updated**: February 3, 2026  
-**Version**: 2.2.1  
+**Last Updated**: March 11, 2026  
+**Version**: 2.3.0  
 **Status**: Production Ready ✅
 

@@ -1,9 +1,7 @@
 // Emoji to Indonesian name mapping
 const emojiNames = {
     '😀': 'Wajah',
-    '😊': 'Wajah Tersenyum',
     '☀️': 'Matahari',
-    '🌞': 'Matahari',
     '🌙': 'Bulan',
     '⭐': 'Bintang',
     '🎈': 'Balon',
@@ -15,9 +13,7 @@ const emojiNames = {
     '🍓': 'Stroberi',
     '🍕': 'Pizza',
     '🍔': 'Burger',
-    '🍟': 'Kentang Goreng',
-    '🍰': 'Kue',
-    '🎂': 'Kue Ulang Tahun',
+    '🎂': 'Kue',
     '🚗': 'Mobil',
     '✈️': 'Pesawat',
     '🚀': 'Roket',
@@ -31,8 +27,5 @@ const emojiNames = {
     '🐠': 'Ikan',
     '🦋': 'Kupu-kupu',
     '⚽': 'Bola',
-    '🏀': 'Bola Basket',
-    '🎾': 'Bola Tenis',
-    '⛳': 'Golf',
     '📚': 'Buku'
 };

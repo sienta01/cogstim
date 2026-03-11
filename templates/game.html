@@ -117,14 +117,6 @@
 
         .instruction-tekan {
             color: #00d084;
-        }
-
-        .instruction-jangan {
-            color: #ff6b6b;
-        }
-
-        .instruction-tekan {
-            color: #00d084;
             font-weight: bold;
         }
 
@@ -132,6 +124,7 @@
             color: #ff6b6b;
             font-weight: bold;
         }
+
 
         button:disabled {
             opacity: 0.5;
@@ -515,7 +508,6 @@
             const btn = document.createElement("button");
             btn.className = "color-btn";
             btn.style.backgroundColor = colorHex[color];
-            // btn.innerText = colorNames[color];
             btn.onclick = () => submitStroop(color);
             colorButtons.appendChild(btn);
         });
@@ -603,7 +595,7 @@
             if (result.is_correct) {
                 if (testType === 'emoji') {
                     const correctName = emojiNames[currentTrial.emoji] || currentTrial.description;
-                    resultElement.innerHTML = `<div>Benar</div><div>Ini adalah ${correctName}.</div>`;
+                    resultElement.innerHTML = `<div>Jawaban Anda benar.</div><div>Ini adalah ${correctName}.</div>`;
                 } else if (testType === 'stroop') {
                     const colorHex = currentTrial.display_color;
                     const colorHexMap = {
@@ -614,7 +606,7 @@
                         "#AA00AA": "warna ungu"
                     };
                     const correctColorName = colorHexMap[colorHex] || colorHex;
-                    resultElement.innerHTML = `<div>Benar</div><div>Ini adalah ${correctColorName}.</div>`;
+                    resultElement.innerHTML = `<div>Jawaban Anda benar.</div><div>Warna dalam tulisan adalah ${correctColorName}.</div>`;
                     document.getElementById("feedbackSection").style.display = "block";
                 } else {
                     resultElement.innerHTML = "Benar";
@@ -623,7 +615,7 @@
             } else {
                 if (testType === 'emoji') {
                     const correctName = emojiNames[currentTrial.emoji] || currentTrial.description;
-                    resultElement.innerHTML = `<div>Salah</div><div>Ini adalah ${correctName}.</div>`;
+                    resultElement.innerHTML = `<div>Jawaban Anda salah.</div><div>Ini adalah ${correctName}.</div>`;
                 } else if (testType === 'stroop') {
                     const colorHex = currentTrial.display_color;
                     const colorHexMap = {
@@ -634,7 +626,7 @@
                         "#AA00AA": "warna ungu"
                     };
                     const correctColorName = colorHexMap[colorHex] || colorHex;
-                    resultElement.innerHTML = `<div>Salah</div><div>Ini adalah ${correctColorName}.</div>`;
+                    resultElement.innerHTML = `<div>Jawaban Anda salah.</div><div>Warna dalam tulisan adalah ${correctColorName}.</div>`;
                     document.getElementById("feedbackSection").style.display = "block";
                 } else {
                     resultElement.innerHTML = "Salah";
