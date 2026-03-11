@@ -281,8 +281,10 @@ def register():
         new_user = User(username=username, password_hash=password_hash)
         db.session.add(new_user)
         db.session.commit()
-        # After registration, redirect to login page
-        return redirect(url_for("login"))
+        # Auto sign-in after registration
+        session["user_id"] = new_user.id
+        session["is_admin"] = new_user.is_admin
+        return redirect(url_for("dashboard"))
     return render_template("register.html")
 
 @app.route("/logout")
