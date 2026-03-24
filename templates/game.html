@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,7 +15,7 @@
         html {
             overflow: hidden;
         }
-            
+
         body {
             background: #ffffff;
             min-height: 100vh;
@@ -26,7 +27,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             overflow: hidden;
         }
-        
+
         .game-container {
             background: transparent;
             border-radius: 0;
@@ -79,6 +80,7 @@
                 opacity: 0;
                 transform: scale(0.5);
             }
+
             to {
                 opacity: 1;
                 transform: scale(1);
@@ -160,7 +162,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, 1px 0 0 #000;            
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, 1px 0 0 #000;
         }
 
         .color-buttons {
@@ -183,13 +185,13 @@
             font-size: 1.5rem;
             color: white;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, 1px 0 0 #000;
         }
 
         .color-btn:hover {
             transform: scale(1.1);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
         }
 
         .result-message {
@@ -227,7 +229,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
         .correct-btn {
@@ -319,12 +321,12 @@
     </style>
 
 </head>
-    
+
 <body>
     <div class="game-container">
         <div class="question-counter" id="questionCounter">1 / {{ total_trials }}</div>
         <div class="title" id="testTitle">Test</div>
-        
+
         <div class="progress-bar">
             <div class="progress-fill" id="progressBar" style="width: 100%"></div>
         </div>
@@ -373,14 +375,15 @@
         </div>
     </div>
 </body>
-    
+
 <script>
     const testType = '{{ test_type }}';
     let currentTrial = null;
     let trials = [];
     let trialIndex = 0;
-    let totalTrials = {{ total_trials }};
+    let totalTrials = parseInt('{{ total_trials }}', 10);
     let responseGiven = false;
+    let wasTimeout = false;
     let timeRemaining = 0;
     const TRIAL_DURATION = 3000; // time per trial
     let trialStartTime = 0;
@@ -396,7 +399,7 @@
         const elapsed = performance.now() - trialStartTime;
         timeRemaining = Math.max(0, (TRIAL_DURATION - elapsed) / 1000);
         updateTimerDisplay();
-        
+
         if (timeRemaining > 0) {
             trialAnimationId = requestAnimationFrame(animateTimer);
         } else {
@@ -429,11 +432,12 @@
 
     async function loadNextTrial() {
         responseGiven = false;
+        wasTimeout = false;
         document.getElementById("result").innerText = "";
         document.getElementById("resultStroop").innerText = "";
         document.getElementById("resultEmoji").innerText = "";
         stopTrialTimer();
-        
+
         // Re-enable buttons at start
         if (testType === 'go_no_go') {
             document.getElementById("goButton").disabled = false;
@@ -444,7 +448,7 @@
             const emojiButtons = document.querySelectorAll('.emoji-btn');
             emojiButtons.forEach(btn => btn.disabled = false);
         }
-        
+
         // Clear display for blank period
         document.getElementById("shapeDisplay").innerText = "";
         document.getElementById("stroopWord").innerText = "";
@@ -452,10 +456,10 @@
         document.getElementById("emojiDisplay").innerText = "";
         document.getElementById("descriptionDisplay").innerText = "";
         document.getElementById("feedbackSection").style.display = "none";
-        
+
         // Wait before showing new trial
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         let response = await fetch("/next");
         let result = await response.json();
 
@@ -465,7 +469,7 @@
             currentTrial = result;
             trialIndex++;
             updateQuestionCounter();
-            
+
             if (testType === 'go_no_go') {
                 displayGoNoGoTrial(result);
                 startTrialTimer();
@@ -490,10 +494,10 @@
         const stroopWord = document.getElementById("stroopWord");
         stroopWord.innerText = word;
         stroopWord.style.color = color;
-        
+
         const colorButtons = document.getElementById("colorButtons");
         colorButtons.innerHTML = "";
-        
+
         const colors = ["red", "blue", "green", "yellow", "purple"];
         const colorHex = {
             "red": "#FF0000",
@@ -509,7 +513,7 @@
             "yellow": "KUNING",
             "purple": "UNGU"
         };
-        
+
         colors.forEach(color => {
             const btn = document.createElement("button");
             btn.className = "color-btn";
@@ -531,10 +535,10 @@
         let latency = Math.round(performance.now() - trialStartTime);
         responseGiven = true;
         stopTrialTimer();
-        
+
         // Disable button after response
         document.getElementById("goButton").disabled = true;
-        
+
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -549,12 +553,13 @@
         if (responseGiven) return;
         let latency = Math.round(performance.now() - trialStartTime);
         responseGiven = true;
+        wasTimeout = colorAnswer === 'timeout';
         stopTrialTimer();
-        
+
         // Disable all color buttons after response
         const buttons = document.querySelectorAll('.color-btn');
         buttons.forEach(btn => btn.disabled = true);
-        
+
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -569,12 +574,13 @@
         if (responseGiven) return;
         let latency = Math.round(performance.now() - trialStartTime);
         responseGiven = true;
+        wasTimeout = isCorrect === 'timeout';
         stopTrialTimer();
-        
+
         // Disable all emoji buttons after response
         const buttons = document.querySelectorAll('.emoji-btn');
         buttons.forEach(btn => btn.disabled = true);
-        
+
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -624,7 +630,11 @@
             } else {
                 if (testType === 'emoji') {
                     const correctName = emojiNames[currentTrial.emoji] || currentTrial.description;
-                    resultElement.innerHTML = `<div>Jawaban Anda salah.</div><div>Ini adalah ${correctName}.</div>`;
+                    if (wasTimeout) {
+                        resultElement.innerHTML = `<div>Waktu Habis.</div><div>Jawaban benar: ${correctName}.</div>`;
+                    } else {
+                        resultElement.innerHTML = `<div>Jawaban Anda salah.</div><div>Ini adalah ${correctName}.</div>`;
+                    }
                 } else if (testType === 'stroop') {
                     const colorHex = currentTrial.display_color;
                     const colorHexMap = {
@@ -635,14 +645,18 @@
                         "#AA00AA": "warna ungu"
                     };
                     const correctColorName = colorHexMap[colorHex] || colorHex;
-                    resultElement.innerHTML = `<div>Jawaban Anda salah.</div><div>Warna dalam tulisan adalah ${correctColorName}.</div>`;
+                    if (wasTimeout) {
+                        resultElement.innerHTML = `<div>Waktu Habis.</div><div>Jawaban benar: ${correctColorName}.</div>`;
+                    } else {
+                        resultElement.innerHTML = `<div>Jawaban Anda salah.</div><div>Warna dalam tulisan adalah ${correctColorName}.</div>`;
+                    }
                     document.getElementById("feedbackSection").style.display = "block";
                 } else {
-                    resultElement.innerHTML = "Salah";
+                    resultElement.innerHTML = wasTimeout ? "Waktu Habis" : "Salah";
                 }
                 resultElement.className = "result-message result-wrong";
             }
-            
+
             // Then navigate after delay
             if (result.finished) {
                 setTimeout(() => {
@@ -672,11 +686,11 @@
         document.getElementById("showScoresBtnContainer").style.display = "block";
         document.getElementById("goNoGoTest").style.display = "none";
         document.getElementById("stroopTest").style.display = "none";
-        
+
         const total = result.total || totalTrials;
         const correct = result.correct || 0;
         const accuracy = Math.round((correct / total) * 100);
-        
+
         document.getElementById("finalScore").innerText = result.score;
         document.getElementById("accuracyText").innerText = `✓ ${correct}/${total} | Akurasi: ${accuracy}%`;
     }
