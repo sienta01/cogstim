@@ -402,7 +402,13 @@
         } else {
             // Time's up
             if (!responseGiven) {
-                submitGoNoGo('nogo_timeout');
+                if (testType === 'go_no_go') {
+                    submitGoNoGo('nogo_timeout');
+                } else if (testType === 'stroop') {
+                    submitStroop('timeout');
+                } else if (testType === 'emoji') {
+                    submitEmoji('timeout');
+                }
             }
         }
     }
@@ -522,6 +528,7 @@
 
     async function submitGoNoGo(action) {
         if (responseGiven) return;
+        let latency = Math.round(performance.now() - trialStartTime);
         responseGiven = true;
         stopTrialTimer();
         
@@ -531,7 +538,7 @@
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: action })
+            body: JSON.stringify({ action: action, latency: latency })
         });
 
         let result = await response.json();
@@ -540,6 +547,7 @@
 
     async function submitStroop(colorAnswer) {
         if (responseGiven) return;
+        let latency = Math.round(performance.now() - trialStartTime);
         responseGiven = true;
         stopTrialTimer();
         
@@ -550,7 +558,7 @@
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ answer: colorAnswer })
+            body: JSON.stringify({ answer: colorAnswer, latency: latency })
         });
 
         let result = await response.json();
@@ -559,6 +567,7 @@
 
     async function submitEmoji(isCorrect) {
         if (responseGiven) return;
+        let latency = Math.round(performance.now() - trialStartTime);
         responseGiven = true;
         stopTrialTimer();
         
@@ -569,7 +578,7 @@
         let response = await fetch("/submit", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_choice: isCorrect })
+            body: JSON.stringify({ user_choice: isCorrect, latency: latency })
         });
 
         let result = await response.json();

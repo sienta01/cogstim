@@ -227,11 +227,13 @@
                     
                     const box = document.createElement('div');
                     box.className = 'test-result-box';
+                    const latencyHtml = scores.avg_latency ? `<div class="test-accuracy">Latensi: ${scores.avg_latency} ms</div>` : '';
                     box.innerHTML = `
                         <div class="test-emoji">${info.emoji}</div>
                         <div class="test-name">${info.name}</div>
                         <div class="test-score">${scores.score}</div>
                         <div class="test-accuracy">${scores.correct_count}/${scores.total_count} | Akurasi: ${accuracy}%</div>
+                        ${latencyHtml}
                     `;
                     container.appendChild(box);
                 }

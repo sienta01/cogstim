@@ -151,12 +151,14 @@
                     <th onclick="sortTable(1)">Tipe Tes &#x25B2;&#x25BC;</th>
                     <th onclick="sortTable(2)">Skor &#x25B2;&#x25BC;</th>
                     <th onclick="sortTable(3)">Akurasi &#x25B2;&#x25BC;</th>
-                    <th onclick="sortTable(4)">Waktu &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(4)">Latensi &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(5)">Waktu &#x25B2;&#x25BC;</th>
                     {% else %}
                     <th onclick="sortTable(0)">Tipe Tes &#x25B2;&#x25BC;</th>
                     <th onclick="sortTable(1)">Skor &#x25B2;&#x25BC;</th>
                     <th onclick="sortTable(2)">Akurasi &#x25B2;&#x25BC;</th>
-                    <th onclick="sortTable(3)">Waktu &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(3)">Latensi &#x25B2;&#x25BC;</th>
+                    <th onclick="sortTable(4)">Waktu &#x25B2;&#x25BC;</th>
                     {% endif %}
                 </tr>
             </thead>
@@ -185,6 +187,7 @@
                     </td>
                     <td>{{ score.score }}</td>
                     <td>{% if score.accuracy %}{{ "%.1f"|format(score.accuracy) }}%{% else %}-{% endif %}</td>
+                    <td>{% if score.reaction_time %}{{ score.reaction_time|round|int }} ms{% else %}-{% endif %}</td>
                     <td>{{ score.timestamp.strftime('%d/%m/%Y %H:%M') if score.timestamp else '-' }}</td>
                 </tr>
                 {% endfor %}

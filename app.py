@@ -130,6 +130,7 @@ def game(test_type):
     session["correct_count"] = 0
     session["total_count"] = 0
     session["trial_index"] = 0
+    session["total_reaction_time"] = 0
     session["is_practice"] = False
     
     if test_type == 'go_no_go':
@@ -157,6 +158,7 @@ def practice(test_type):
     session["correct_count"] = 0
     session["total_count"] = 0
     session["trial_index"] = 0
+    session["total_reaction_time"] = 0
     session["is_practice"] = True
     
     if test_type == 'go_no_go':
@@ -359,6 +361,8 @@ def submit():
     test_type = session.get("test_type")
     trial_index = session.get("trial_index", 0)
     is_practice = session.get("is_practice", False)
+    latency = data.get("latency", 0)
+    session["total_reaction_time"] = session.get("total_reaction_time", 0) + latency
     
     if test_type == 'go_no_go':
         if is_practice:
@@ -450,11 +454,13 @@ def submit():
             })
         else:
             # Actual test finished, save scores
+            avg_latency = session.get("total_reaction_time", 0) / session["total_count"] if session["total_count"] > 0 else 0
             test_scores = session.get("test_scores", {})
             test_scores[test_type] = {
                 "score": session["score"],
                 "correct_count": session["correct_count"],
-                "total_count": session["total_count"]
+                "total_count": session["total_count"],
+                "avg_latency": round(avg_latency)
             }
             session["test_scores"] = test_scores
             
@@ -464,6 +470,7 @@ def submit():
                 score=session["score"],
                 test_type=test_type,
                 accuracy=accuracy,
+                reaction_time=avg_latency,
                 user_id=session["user_id"]
             )
             db.session.add(new_score)

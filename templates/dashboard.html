@@ -277,6 +277,7 @@
                 <th>Tipe Tes</th>
                 <th>Skor</th>
                 <th>Akurasi</th>
+                <th>Latensi</th>
                 <th>Waktu</th>
             </tr>
         </thead>
@@ -296,6 +297,7 @@
                 </td>
                 <td><strong>{{ score.score }}</strong></td>
                 <td>{% if score.accuracy %}{{ "%.1f"|format(score.accuracy) }}%{% else %}-{% endif %}</td>
+                <td>{% if score.reaction_time %}{{ score.reaction_time|round|int }} ms{% else %}-{% endif %}</td>
                 <td>{{ score.timestamp.strftime('%d/%m/%Y %H:%M') if score.timestamp else '-' }}</td>
             </tr>
             {% endfor %}
