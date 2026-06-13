@@ -87,7 +87,8 @@
         }
 
         .form-group input[type="text"],
-        .form-group input[type="password"] {
+        .form-group input[type="password"],
+        .form-group input[type="tel"] {
             width: 100% !important;
             padding: 18px 20px !important;
             font-size: 1.25rem !important;
@@ -104,7 +105,8 @@
         }
 
         .form-group input[type="text"]:focus,
-        .form-group input[type="password"]:focus {
+        .form-group input[type="password"]:focus,
+        .form-group input[type="tel"]:focus {
             border-color: #2e7d32 !important;
             border-bottom-color: #2e7d32 !important;
             box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.15) !important;
@@ -114,6 +116,43 @@
         .form-group input::placeholder {
             color: #aaa;
             font-size: 1.1rem;
+        }
+
+        .phone-input-group {
+            display: flex;
+            align-items: stretch;
+            gap: 0;
+        }
+
+        .phone-prefix {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 16px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #333;
+            background: #e8f0fe;
+            border: 2px solid #ddd;
+            border-right: none;
+            border-radius: 14px 0 0 14px;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .phone-input-group input[type="tel"] {
+            border-radius: 0 14px 14px 0 !important;
+            border-left: none !important;
+            flex: 1;
+        }
+
+        .phone-input-group input[type="tel"]:focus {
+            border-color: #2e7d32 !important;
+        }
+
+        .phone-input-group:focus-within .phone-prefix {
+            border-color: #2e7d32;
+            background: #e8f5e9;
         }
 
         .register-btn {
@@ -215,6 +254,15 @@
                 <label for="password">🔒 Password</label>
                 <input type="password" name="password" id="password" placeholder="Buat password" required
                     autocomplete="new-password">
+            </div>
+            <div class="form-group">
+                <label for="phone_number">📱 Nomor WhatsApp</label>
+                <div class="phone-input-group">
+                    <span class="phone-prefix">+62</span>
+                    <input type="tel" name="phone_number" id="phone_number" placeholder="81234567890"
+                        pattern="[0-9]{9,13}" title="Masukkan nomor telepon tanpa 0 di depan (contoh: 81234567890)"
+                        autocomplete="tel">
+                </div>
             </div>
             <button class="register-btn" type="submit">Daftar</button>
         </form>

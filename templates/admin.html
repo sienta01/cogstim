@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — Stimulasi Kognitif</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            min-height: 100vh;
+            background: #0f1117;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #e4e6eb;
+        }
+
+        /* ── Top Bar ─────────────────────────────── */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #161822 0%, #1a1d2e 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .topbar-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c8cff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+        .btn-outline {
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: 1.5px solid rgba(255,255,255,0.15);
+            background: transparent;
+            color: #b0b8d1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-outline:hover {
+            background: rgba(255,255,255,0.06);
+            border-color: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+
+        .btn-primary {
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: none;
+            background: linear-gradient(135deg, #6c8cff 0%, #5a6fd6 100%);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 4px 16px rgba(108, 140, 255, 0.35);
+            transform: translateY(-1px);
+        }
+
+        /* ── Stats Row ───────────────────────────── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            padding: 24px 32px 8px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #1a1d2e, #20243a);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c8cff, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.82rem;
+            color: #8892b0;
+            margin-top: 4px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* ── Table Section ────────────────────────── */
+        .table-section {
+            padding: 20px 32px 32px;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .table-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #e4e6eb;
+        }
+
+        .search-box {
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            color: #e4e6eb;
+            font-size: 0.88rem;
+            width: 240px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: #6c8cff;
+            background: rgba(108, 140, 255, 0.06);
+        }
+
+        .search-box::placeholder { color: #555a70; }
+
+        .data-table-wrapper {
+            overflow-x: auto;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 900px;
+        }
+
+        .data-table th {
+            background: #1a1d2e;
+            color: #8892b0;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 14px 16px;
+            text-align: left;
+            white-space: nowrap;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+
+        .data-table th:hover { color: #6c8cff; }
+
+        .data-table td {
+            padding: 13px 16px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: #c0c6d8;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        .data-table tbody tr:hover {
+            background: rgba(108, 140, 255, 0.06);
+        }
+
+        .username-link {
+            color: #6c8cff;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s;
+        }
+
+        .username-link:hover {
+            color: #a78bfa;
+            text-decoration: underline;
+        }
+
+        .score-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .score-pill.go-nogo { background: rgba(255, 183, 77, 0.15); color: #ffb74d; }
+        .score-pill.stroop { background: rgba(108, 140, 255, 0.15); color: #6c8cff; }
+        .score-pill.emoji { background: rgba(102, 187, 106, 0.15); color: #66bb6a; }
+        .score-pill.none { background: rgba(255,255,255,0.05); color: #555a70; }
+
+        .btn-send {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-send:hover {
+            box-shadow: 0 2px 12px rgba(37, 211, 102, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .time-ago { color: #8892b0; font-size: 0.82rem; }
+        .phone-cell { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; color: #8892b0; }
+
+        /* ── Modal ────────────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 200;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 40px;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: #1a1d2e;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            width: 90%;
+            max-width: 800px;
+            padding: 32px;
+            animation: modalSlideIn 0.3s ease;
+            margin-bottom: 40px;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #e4e6eb;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: #8892b0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+
+        .detail-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #e4e6eb;
+        }
+
+        .chart-container {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .chart-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #b0b8d1;
+            margin-bottom: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-send-large {
+            padding: 12px 28px;
+            border-radius: 12px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-send-large:hover {
+            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
+            transform: translateY(-1px);
+        }
+
+        /* ── Loading Spinner ──────────────────────── */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #8892b0;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid rgba(108, 140, 255, 0.15);
+            border-top-color: #6c8cff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Toast ────────────────────────────────── */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .toast.success { background: linear-gradient(135deg, #25D366, #128C7E); }
+        .toast.error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
+        .toast.info { background: linear-gradient(135deg, #6c8cff, #5a6fd6); }
+
+        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(10px); } }
+
+        /* ── Responsive ───────────────────────────── */
+        @media (max-width: 768px) {
+            .topbar { padding: 14px 16px; }
+            .stats-row { padding: 16px 16px 8px; }
+            .table-section { padding: 16px; }
+            .modal-content { padding: 20px; }
+            .table-header { flex-direction: column; gap: 10px; }
+            .search-box { width: 100%; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-title">🛡️ Admin Panel</div>
+        <div class="topbar-actions">
+            <button class="btn-outline" onclick="loadUsers()">🔄 Refresh</button>
+            <a href="/dashboard" class="btn-outline">← Dashboard</a>
+            <a href="/logout" class="btn-primary" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Keluar</a>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value" id="statTotalUsers">—</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statActiveToday">—</div>
+            <div class="stat-label">Active Today</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statInactive">—</div>
+            <div class="stat-label">Inactive</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="statNoPhone">—</div>
+            <div class="stat-label">No Phone</div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section">
+        <div class="table-header">
+            <div class="table-title">📋 Daftar Pengguna</div>
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Cari pengguna..." oninput="filterTable()">
+        </div>
+
+        <div id="tableLoading" class="loading">
+            <div class="spinner"></div>
+            <div>Memuat data...</div>
+        </div>
+
+        <div class="data-table-wrapper" id="tableWrapper" style="display:none;">
+            <table class="data-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortColumn(0)">No</th>
+                        <th onclick="sortColumn(1)">Username</th>
+                        <th onclick="sortColumn(2)">Last Exec</th>
+                        <th onclick="sortColumn(3)">Off Time</th>
+                        <th onclick="sortColumn(4)">Go/No-Go</th>
+                        <th onclick="sortColumn(5)">Stroop</th>
+                        <th onclick="sortColumn(6)">Emoji</th>
+                        <th onclick="sortColumn(7)">Phone</th>
+                        <th onclick="sortColumn(8)">Last Message</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">User Detail</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+
+            <div class="detail-grid" id="detailGrid">
+                <div class="detail-item">
+                    <div class="detail-label">Phone Number</div>
+                    <div class="detail-value" id="detailPhone">—</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Last Test</div>
+                    <div class="detail-value" id="detailLastExec">—</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Last Reminder Sent</div>
+                    <div class="detail-value" id="detailLastReminder">—</div>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">📊 Score History — Go/No-Go</div>
+                <canvas id="chartGoNogo" height="140"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">🎨 Score History — Stroop</div>
+                <canvas id="chartStroop" height="140"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-title">😀 Score History — Emoji</div>
+                <canvas id="chartEmoji" height="140"></canvas>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-send-large" id="modalSendBtn" onclick="sendReminderFromModal()">
+                    📲 Kirim Reminder WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        let usersData = [];
+        let currentUserId = null;
+        let charts = {};
+
+        // ── Load Users ─────────────────────────────
+        async function loadUsers() {
+            document.getElementById('tableLoading').style.display = 'block';
+            document.getElementById('tableWrapper').style.display = 'none';
+
+            try {
+                const resp = await fetch('/admin/api/users');
+                usersData = await resp.json();
+                renderTable(usersData);
+                updateStats(usersData);
+            } catch (e) {
+                showToast('Gagal memuat data pengguna', 'error');
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+
+            data.forEach((u, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td><a class="username-link" onclick="showUserDetail(${u.id})">${u.username}</a></td>
+                    <td class="time-ago">${u.last_exec || '—'}</td>
+                    <td class="time-ago">${u.off_time}</td>
+                    <td>${u.score_go_nogo !== null ? `<span class="score-pill go-nogo">${u.score_go_nogo}</span>` : '<span class="score-pill none">—</span>'}</td>
+                    <td>${u.score_stroop !== null ? `<span class="score-pill stroop">${u.score_stroop}</span>` : '<span class="score-pill none">—</span>'}</td>
+                    <td>${u.score_emoji !== null ? `<span class="score-pill emoji">${u.score_emoji}</span>` : '<span class="score-pill none">—</span>'}</td>
+                    <td class="phone-cell">${u.phone_number || '—'}</td>
+                    <td class="time-ago">${u.last_reminder_sent || '—'}</td>
+                    <td>
+                        <button class="btn-send" onclick="sendReminder(${u.id}, '${u.username}', '${u.phone_number || ''}')" ${!u.phone_number ? 'disabled title="No phone number"' : ''}>
+                            📲 Send
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('tableLoading').style.display = 'none';
+            document.getElementById('tableWrapper').style.display = 'block';
+        }
+
+        function updateStats(data) {
+            const today = new Date().toISOString().slice(0, 10);
+            document.getElementById('statTotalUsers').textContent = data.length;
+            document.getElementById('statActiveToday').textContent = data.filter(u => u.last_exec && u.last_exec.startsWith(today)).length;
+            document.getElementById('statInactive').textContent = data.filter(u => !u.last_exec || !u.last_exec.startsWith(today)).length;
+            document.getElementById('statNoPhone').textContent = data.filter(u => !u.phone_number).length;
+        }
+
+        // ── Search / Filter ────────────────────────
+        function filterTable() {
+            const q = document.getElementById('searchBox').value.toLowerCase();
+            const filtered = usersData.filter(u =>
+                u.username.toLowerCase().includes(q) ||
+                (u.phone_number || '').includes(q)
+            );
+            renderTable(filtered);
+        }
+
+        // ── Sort ────────────────────────────────────
+        let sortDir = {};
+        function sortColumn(colIdx) {
+            sortDir[colIdx] = !sortDir[colIdx];
+            const dir = sortDir[colIdx] ? 1 : -1;
+            const keys = ['id', 'username', 'last_exec', 'off_time', 'score_go_nogo', 'score_stroop', 'score_emoji', 'phone_number', 'last_reminder_sent'];
+            const key = keys[colIdx];
+            usersData.sort((a, b) => {
+                const va = a[key] ?? '';
+                const vb = b[key] ?? '';
+                if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+                return String(va).localeCompare(String(vb)) * dir;
+            });
+            renderTable(usersData);
+        }
+
+        // ── Send Reminder ───────────────────────────
+        async function sendReminder(userId, username, phone) {
+            if (!phone) {
+                showToast('Nomor telepon tidak tersedia', 'error');
+                return;
+            }
+
+            // Open WhatsApp web with pre-filled message
+            const message = encodeURIComponent(`Halo ${username}, ini pengingat untuk melakukan tes stimulasi kognitif hari ini. Silakan kunjungi aplikasi CogStim untuk menyelesaikan tes Anda. Terima kasih! 🧠`);
+            const waUrl = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
+            window.open(waUrl, '_blank');
+
+            // Record on server
+            try {
+                await fetch(`/admin/api/send_reminder/${userId}`, { method: 'POST' });
+                showToast(`Reminder dikirim ke ${username}`, 'success');
+                loadUsers();
+            } catch (e) {
+                showToast('Gagal mencatat reminder', 'error');
+            }
+        }
+
+        // ── User Detail Modal ───────────────────────
+        async function showUserDetail(userId) {
+            currentUserId = userId;
+            document.getElementById('userModal').classList.add('active');
+
+            try {
+                const resp = await fetch(`/admin/api/user/${userId}`);
+                const data = await resp.json();
+
+                document.getElementById('modalTitle').textContent = `👤 ${data.username}`;
+                document.getElementById('detailPhone').textContent = data.phone_number || '—';
+                document.getElementById('detailLastExec').textContent = data.last_exec || 'Belum pernah';
+                document.getElementById('detailLastReminder').textContent = data.last_reminder_sent || 'Belum pernah';
+
+                // Update send button
+                const btn = document.getElementById('modalSendBtn');
+                btn.onclick = () => sendReminder(data.id, data.username, data.phone_number);
+                btn.disabled = !data.phone_number;
+
+                // Render charts
+                renderChart('chartGoNogo', data.score_history.go_no_go, '#ffb74d');
+                renderChart('chartStroop', data.score_history.stroop, '#6c8cff');
+                renderChart('chartEmoji', data.score_history.emoji, '#66bb6a');
+            } catch (e) {
+                showToast('Gagal memuat detail pengguna', 'error');
+            }
+        }
+
+        function renderChart(canvasId, history, color) {
+            if (charts[canvasId]) charts[canvasId].destroy();
+
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            charts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: history.labels,
+                    datasets: [{
+                        label: 'Score',
+                        data: history.scores,
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointBackgroundColor: color,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#555a70', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' }
+                        },
+                        y: {
+                            ticks: { color: '#555a70', font: { size: 10 } },
+                            grid: { color: 'rgba(255,255,255,0.04)' },
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        // Close modal on overlay click
+        document.getElementById('userModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // ── Toast ────────────────────────────────────
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // ── Init ─────────────────────────────────────
+        loadUsers();
+    </script>
+</body>
+
+</html>

@@ -68,7 +68,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    phone_number = db.Column(db.String(20), nullable=True)  # e.g. +6281234567890
     is_admin = db.Column(db.Boolean, default=False)
+    last_reminder_sent = db.Column(db.DateTime, nullable=True)
 
     # Relationship to Score
     scores = db.relationship('Score', backref='user', lazy=True)
@@ -276,11 +278,16 @@ def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
+        phone_number = request.form.get("phone_number", "").strip()
+        # Normalize phone number: ensure +62 prefix
+        if phone_number:
+            phone_number = phone_number.lstrip('0').lstrip('+').lstrip('62')
+            phone_number = '+62' + phone_number
         if User.query.filter_by(username=username).first():
             flash("Username sudah digunakan.")
             return render_template("register.html")
         password_hash = generate_password_hash(password)
-        new_user = User(username=username, password_hash=password_hash)
+        new_user = User(username=username, password_hash=password_hash, phone_number=phone_number if phone_number else None)
         db.session.add(new_user)
         db.session.commit()
         # Auto sign-in after registration
@@ -556,8 +563,147 @@ def scores():
     return render_template("scores.html", scores=user_scores, is_admin=is_admin)
 
 
+# ── Admin Panel (Web) ──────────────────────────────────────────────
+
+@app.route("/admin")
+def admin_panel():
+    """Web admin panel – shows all users and their info"""
+    if 'user_id' not in session or not session.get('is_admin', False):
+        flash("Akses ditolak. Hanya admin.")
+        return redirect(url_for('login'))
+    return render_template('admin.html')
+
+
+@app.route("/admin/api/users")
+def admin_api_users():
+    """JSON endpoint – user table data (consumed by both web admin & desktop app)"""
+    # Allow access from desktop app via API key OR admin session
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    users = User.query.filter_by(is_admin=False).all()
+    result = []
+    for u in users:
+        # Latest scores per test type
+        latest_scores = {}
+        for tt in ['go_no_go', 'stroop', 'emoji']:
+            s = Score.query.filter_by(user_id=u.id, test_type=tt).order_by(Score.timestamp.desc()).first()
+            latest_scores[tt] = s.score if s else None
+
+        # Last execution = most recent score timestamp
+        last_score = Score.query.filter_by(user_id=u.id).order_by(Score.timestamp.desc()).first()
+        last_exec = last_score.timestamp.strftime('%Y-%m-%d %H:%M') if last_score and last_score.timestamp else None
+
+        # Off time = days since last execution
+        if last_score and last_score.timestamp:
+            delta = datetime.datetime.utcnow() - last_score.timestamp
+            off_time = f"{delta.days}d {delta.seconds // 3600}h"
+        else:
+            off_time = "Never"
+
+        result.append({
+            'id': u.id,
+            'username': u.username,
+            'phone_number': u.phone_number or '',
+            'last_exec': last_exec,
+            'off_time': off_time,
+            'score_go_nogo': latest_scores['go_no_go'],
+            'score_stroop': latest_scores['stroop'],
+            'score_emoji': latest_scores['emoji'],
+            'last_reminder_sent': u.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if u.last_reminder_sent else None
+        })
+    return jsonify(result)
+
+
+@app.route("/admin/api/user/<int:user_id>")
+def admin_api_user_detail(user_id):
+    """JSON endpoint – detailed user data including score history for graphs"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get_or_404(user_id)
+    scores = Score.query.filter_by(user_id=user.id).order_by(Score.timestamp.asc()).all()
+
+    score_history = {}
+    for tt in ['go_no_go', 'stroop', 'emoji']:
+        entries = [s for s in scores if s.test_type == tt]
+        score_history[tt] = {
+            'labels': [s.timestamp.strftime('%d/%m %H:%M') if s.timestamp else '' for s in entries],
+            'scores': [s.score for s in entries],
+            'accuracy': [round(s.accuracy, 1) if s.accuracy else 0 for s in entries],
+            'reaction_time': [round(s.reaction_time) if s.reaction_time else 0 for s in entries]
+        }
+
+    last_score = Score.query.filter_by(user_id=user.id).order_by(Score.timestamp.desc()).first()
+
+    return jsonify({
+        'id': user.id,
+        'username': user.username,
+        'phone_number': user.phone_number or '',
+        'last_exec': last_score.timestamp.strftime('%Y-%m-%d %H:%M') if last_score and last_score.timestamp else None,
+        'last_reminder_sent': user.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if user.last_reminder_sent else None,
+        'score_history': score_history
+    })
+
+
+@app.route("/admin/api/send_reminder/<int:user_id>", methods=["POST"])
+def admin_send_reminder(user_id):
+    """Record that a reminder was sent (actual WhatsApp sending is done by desktop app)"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get_or_404(user_id)
+    user.last_reminder_sent = datetime.datetime.utcnow()
+    db.session.commit()
+    return jsonify({"success": True, "message": f"Reminder recorded for {user.username}"})
+
+
+@app.route("/admin/api/check_pending")
+def admin_api_check_pending():
+    """Return users who haven't done any test today (for auto-reminder at 1pm)"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    if api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    today = datetime.datetime.utcnow().date()
+    users = User.query.filter_by(is_admin=False).all()
+    pending = []
+    for u in users:
+        if not u.phone_number:
+            continue
+        last_score = Score.query.filter_by(user_id=u.id).order_by(Score.timestamp.desc()).first()
+        did_today = False
+        if last_score and last_score.timestamp:
+            did_today = last_score.timestamp.date() == today
+        if not did_today:
+            pending.append({
+                'id': u.id,
+                'username': u.username,
+                'phone_number': u.phone_number
+            })
+    return jsonify(pending)
+
+
 with app.app_context():
     db.create_all()  # Create database tables if they don't exist
+    # Add new columns if they don't exist (migration for existing databases)
+    import sqlalchemy
+    inspector = sqlalchemy.inspect(db.engine)
+    existing_columns = [col['name'] for col in inspector.get_columns('user')]
+    if 'phone_number' not in existing_columns:
+        with db.engine.connect() as conn:
+            conn.execute(sqlalchemy.text('ALTER TABLE user ADD COLUMN phone_number VARCHAR(20)'))
+            conn.commit()
+    if 'last_reminder_sent' not in existing_columns:
+        with db.engine.connect() as conn:
+            conn.execute(sqlalchemy.text('ALTER TABLE user ADD COLUMN last_reminder_sent DATETIME'))
+            conn.commit()
 
 # Run the application for development
 if __name__ == "__main__":
