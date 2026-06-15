@@ -1,8 +1,8 @@
 """
 Cognitive Stimulation Application
-Version: 2.3.0
+Version: 3.0.0
 Release Date: March 11, 2026
-Author: Development Team
+Author: Timothy Subroto
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
 
@@ -14,10 +14,18 @@ import os
 import re
 import datetime
 
-# Application Version
-__version__ = "2.3.0"
-
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+# Load version dynamically from VERSION file
+def load_version():
+    version_file = os.path.join(BASE_DIR, 'VERSION')
+    try:
+        with open(version_file, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    except IOError:
+        return "3.0.0"
+
+__version__ = load_version()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -688,6 +696,91 @@ def admin_api_check_pending():
                 'phone_number': u.phone_number
             })
     return jsonify(pending)
+
+
+@app.route("/admin/api/users/create", methods=["POST"])
+def admin_api_create_user():
+    """Create a new user account from admin panel"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    username = (data.get('username') or '').strip()
+    password = (data.get('password') or '').strip()
+    phone_number = (data.get('phone_number') or '').strip()
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+
+    if User.query.filter_by(username=username).first():
+        return jsonify({"error": "Username already exists"}), 409
+
+    # Normalize phone number
+    if phone_number:
+        phone_number = phone_number.lstrip('0').lstrip('+').lstrip('62')
+        phone_number = '+62' + phone_number
+
+    new_user = User(
+        username=username,
+        password_hash=generate_password_hash(password),
+        phone_number=phone_number if phone_number else None
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify({"success": True, "message": f"User '{username}' created", "id": new_user.id}), 201
+
+
+@app.route("/admin/api/users/<int:user_id>/edit", methods=["PUT"])
+def admin_api_edit_user(user_id):
+    """Edit an existing user account"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+
+    new_username = (data.get('username') or '').strip()
+    new_phone = (data.get('phone_number') or '').strip()
+    new_password = (data.get('password') or '').strip()
+
+    if new_username and new_username != user.username:
+        if User.query.filter_by(username=new_username).first():
+            return jsonify({"error": "Username already exists"}), 409
+        user.username = new_username
+
+    if new_phone:
+        new_phone = new_phone.lstrip('0').lstrip('+').lstrip('62')
+        new_phone = '+62' + new_phone
+    user.phone_number = new_phone if new_phone else None
+
+    if new_password:
+        user.password_hash = generate_password_hash(new_password)
+
+    db.session.commit()
+    return jsonify({"success": True, "message": f"User '{user.username}' updated"})
+
+
+@app.route("/admin/api/users/<int:user_id>/delete", methods=["DELETE"])
+def admin_api_delete_user(user_id):
+    """Delete a user account and all associated scores"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get_or_404(user_id)
+    if user.is_admin:
+        return jsonify({"error": "Cannot delete admin accounts"}), 403
+
+    username = user.username
+    Score.query.filter_by(user_id=user.id).delete()
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"success": True, "message": f"User '{username}' deleted"})
 
 
 with app.app_context():

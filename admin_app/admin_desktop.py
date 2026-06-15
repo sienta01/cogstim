@@ -1,7 +1,7 @@
 """
 CogStim Desktop Admin App
 - System tray support (minimize to taskbar)
-- Auto-send WhatsApp reminders at 1:00 PM daily
+- Auto-send WhatsApp reminders at 1:00 PM daily (via Selenium automation)
 - User management table with detail view
 """
 
@@ -9,15 +9,16 @@ import sys
 import os
 import json
 import requests
-import webbrowser
-import urllib.parse
 from datetime import datetime, timedelta
+
+from whatsapp_sender import WhatsAppSender
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTableWidget, QTableWidgetItem, QPushButton, QLabel, QHeaderView,
     QSystemTrayIcon, QMenu, QDialog, QScrollArea, QFrame, QMessageBox,
-    QSplitter, QStatusBar, QLineEdit, QGroupBox, QGridLayout, QCheckBox
+    QSplitter, QStatusBar, QLineEdit, QGroupBox, QGridLayout, QCheckBox,
+    QProgressDialog, QTextEdit
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, QThread, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QColor, QAction, QPainter, QPixmap
@@ -46,8 +47,15 @@ API_KEY = CONFIG['api_key']
 REMINDER_HOUR = CONFIG.get('reminder_hour', 13)
 REMINDER_MINUTE = CONFIG.get('reminder_minute', 0)
 AUTO_SEND = CONFIG.get('auto_send_enabled', True)
+CHROME_PROFILE = CONFIG.get(
+    'chrome_profile_path',
+    os.path.join(BASE_DIR, 'chrome-whatsapp-profile')
+)
 
 HEADERS = {'X-API-Key': API_KEY}
+
+# ── Global WhatsApp Sender ───────────────────────────────────────
+wa_sender = WhatsAppSender(CHROME_PROFILE)
 
 # ── Colors ───────────────────────────────────────────────────────
 BG_DARK = "#0f1117"
@@ -111,19 +119,108 @@ class ApiWorker(QThread):
     def __init__(self, url, method='GET', data=None):
         super().__init__()
         self.url = url
-        self.method = method
+        self.method = method.upper()
         self.data = data
 
     def run(self):
         try:
             if self.method == 'GET':
                 resp = requests.get(self.url, headers=HEADERS, timeout=15)
+            elif self.method == 'POST':
+                resp = requests.post(self.url, headers=HEADERS, json=self.data, timeout=15)
+            elif self.method == 'PUT':
+                resp = requests.put(self.url, headers=HEADERS, json=self.data, timeout=15)
+            elif self.method == 'DELETE':
+                resp = requests.delete(self.url, headers=HEADERS, timeout=15)
             else:
                 resp = requests.post(self.url, headers=HEADERS, json=self.data, timeout=15)
             resp.raise_for_status()
             self.finished.emit(resp.json())
+        except requests.exceptions.HTTPError as e:
+            try:
+                err_body = e.response.json().get('error', str(e))
+            except Exception:
+                err_body = str(e)
+            self.error.emit(err_body)
         except Exception as e:
             self.error.emit(str(e))
+
+
+# ── WhatsApp Browser Worker ──────────────────────────────────────
+class WaBrowserWorker(QThread):
+    """Start / wait-for-ready the Selenium browser in background."""
+    ready = pyqtSignal()
+    failed = pyqtSignal(str)
+
+    def run(self):
+        try:
+            wa_sender.start_browser()
+            if wa_sender.wait_until_ready(timeout=90):
+                self.ready.emit()
+            else:
+                self.failed.emit("Timed out waiting for WhatsApp Web login.")
+        except Exception as e:
+            self.failed.emit(str(e))
+
+
+class WaSendWorker(QThread):
+    """Send a single WhatsApp message in the background."""
+    finished = pyqtSignal(str, dict)  # phone, result
+
+    def __init__(self, phone, message):
+        super().__init__()
+        self.phone = phone
+        self.message = message
+
+    def run(self):
+        result = wa_sender.send_message(self.phone, self.message)
+        self.finished.emit(self.phone, result)
+
+
+class WaBatchWorker(QThread):
+    """Send WhatsApp messages to a list of users sequentially."""
+    progress = pyqtSignal(int, int, str, bool)  # current, total, info, success
+    done = pyqtSignal(int, int)  # sent, failed
+
+    def __init__(self, users, message_template):
+        super().__init__()
+        self.users = users  # list of {id, username, phone_number}
+        self.message_template = message_template
+        self._cancel = False
+
+    def cancel(self):
+        self._cancel = True
+
+    def run(self):
+        sent = 0
+        failed = 0
+        total = len(self.users)
+        for i, user in enumerate(self.users):
+            if self._cancel:
+                break
+            phone = user.get('phone_number', '')
+            if not phone:
+                failed += 1
+                self.progress.emit(i + 1, total, f"{user['username']}: no phone", False)
+                continue
+            msg = self.message_template.replace('{username}', user['username'])
+            result = wa_sender.send_message(phone, msg)
+            if result['success']:
+                sent += 1
+                self.progress.emit(i + 1, total, f"✅ {user['username']}", True)
+                # Record on server
+                try:
+                    requests.post(
+                        f"{SERVER_URL}/admin/api/send_reminder/{user['id']}",
+                        headers=HEADERS, timeout=10)
+                except Exception:
+                    pass
+            else:
+                failed += 1
+                self.progress.emit(
+                    i + 1, total,
+                    f"❌ {user['username']}: {result['error']}", False)
+        self.done.emit(sent, failed)
 
 
 # ── Chart Widget ─────────────────────────────────────────────────
@@ -159,6 +256,151 @@ class ScoreChart(FigureCanvas):
             self.ax.text(0.5, 0.5, 'No data', ha='center', va='center', color='#555a70', transform=self.ax.transAxes)
         self.fig.tight_layout()
         self.draw()
+
+
+# ── Account Form Dialog ──────────────────────────────────────────
+class AccountFormDialog(QDialog):
+    """Dialog for creating or editing a user account."""
+    def __init__(self, parent=None, user_data=None):
+        super().__init__(parent)
+        self.user_data = user_data  # None = create mode, dict = edit mode
+        self.is_edit = user_data is not None
+        self.setWindowTitle("Edit Account" if self.is_edit else "Add New Account")
+        self.setMinimumSize(420, 320)
+        self.result_data = None
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        layout.setContentsMargins(28, 28, 28, 28)
+
+        # Header
+        header = QLabel("✏️ Edit Account" if self.is_edit else "➕ Add New Account")
+        header.setFont(QFont('Segoe UI', 16, QFont.Weight.Bold))
+        header.setStyleSheet(f"color: {ACCENT};")
+        layout.addWidget(header)
+
+        # Form
+        form_group = QGroupBox("Account Details")
+        form_layout = QGridLayout()
+        form_layout.setSpacing(12)
+
+        lbl_user = QLabel("Username")
+        lbl_user.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 700;")
+        self.username_input = QLineEdit()
+        self.username_input.setPlaceholderText("Enter username")
+        if self.is_edit:
+            self.username_input.setText(self.user_data.get('username', ''))
+        form_layout.addWidget(lbl_user, 0, 0)
+        form_layout.addWidget(self.username_input, 0, 1)
+
+        lbl_phone = QLabel("Phone")
+        lbl_phone.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 700;")
+        self.phone_input = QLineEdit()
+        self.phone_input.setPlaceholderText("+62... or 08...")
+        if self.is_edit:
+            self.phone_input.setText(self.user_data.get('phone_number', '') or '')
+        form_layout.addWidget(lbl_phone, 1, 0)
+        form_layout.addWidget(self.phone_input, 1, 1)
+
+        lbl_pass = QLabel("Password")
+        lbl_pass.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 700;")
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        if self.is_edit:
+            self.password_input.setPlaceholderText("Leave blank to keep current")
+        else:
+            self.password_input.setPlaceholderText("Enter password")
+        form_layout.addWidget(lbl_pass, 2, 0)
+        form_layout.addWidget(self.password_input, 2, 1)
+
+        form_group.setLayout(form_layout)
+        layout.addWidget(form_group)
+
+        layout.addStretch()
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setMinimumHeight(40)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+
+        save_btn = QPushButton("💾 Save" if self.is_edit else "➕ Create")
+        save_btn.setObjectName("primaryBtn")
+        save_btn.setMinimumHeight(40)
+        save_btn.setFont(QFont('Segoe UI', 11, QFont.Weight.Bold))
+        save_btn.clicked.connect(self.on_save)
+        btn_layout.addWidget(save_btn)
+
+        layout.addLayout(btn_layout)
+
+    def on_save(self):
+        username = self.username_input.text().strip()
+        password = self.password_input.text().strip()
+        phone = self.phone_input.text().strip()
+
+        if not username:
+            QMessageBox.warning(self, "Validation", "Username is required.")
+            return
+        if not self.is_edit and not password:
+            QMessageBox.warning(self, "Validation", "Password is required for new accounts.")
+            return
+
+        self.result_data = {
+            'username': username,
+            'password': password,
+            'phone_number': phone
+        }
+        self.accept()
+
+
+# ── Confirm Delete Dialog ────────────────────────────────────────
+class ConfirmDeleteDialog(QDialog):
+    def __init__(self, username, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Confirm Delete")
+        self.setMinimumSize(380, 200)
+        self.setup_ui(username)
+
+    def setup_ui(self, username):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        layout.setContentsMargins(28, 28, 28, 28)
+
+        icon_label = QLabel("⚠️")
+        icon_label.setFont(QFont('Segoe UI', 32))
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
+
+        msg = QLabel(f"Delete user <b>{username}</b>?<br>"
+                     f"<span style='color:{TEXT_SECONDARY}; font-size: 11px;'>This will permanently remove the account and all their test scores.</span>")
+        msg.setWordWrap(True)
+        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        msg.setFont(QFont('Segoe UI', 12))
+        layout.addWidget(msg)
+
+        layout.addStretch()
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setMinimumHeight(40)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+
+        delete_btn = QPushButton("🗑️ Delete")
+        delete_btn.setMinimumHeight(40)
+        delete_btn.setFont(QFont('Segoe UI', 11, QFont.Weight.Bold))
+        delete_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 8px; padding: 8px 18px; font-weight: 600;")
+        delete_btn.clicked.connect(self.accept)
+        btn_layout.addWidget(delete_btn)
+
+        layout.addLayout(btn_layout)
 
 
 # ── User Detail Dialog ───────────────────────────────────────────
@@ -229,33 +471,40 @@ class UserDetailDialog(QDialog):
         send_btn.setObjectName("sendBtn")
         send_btn.setFont(QFont('Segoe UI', 12, QFont.Weight.Bold))
         send_btn.setMinimumHeight(44)
-        send_btn.setEnabled(bool(phone))
+        send_btn.setEnabled(bool(phone) and wa_sender.is_ready())
+        if not wa_sender.is_ready():
+            send_btn.setToolTip("Connect WhatsApp first from the main window")
         send_btn.clicked.connect(lambda: self.send_reminder())
         layout.addWidget(send_btn)
 
     def send_reminder(self):
         phone = self.user_data.get('phone_number', '')
         username = self.user_data.get('username', '')
+        if not wa_sender.is_ready():
+            QMessageBox.warning(self, "Not Connected",
+                                "WhatsApp is not connected. Please connect first.")
+            return
         if phone:
-            send_whatsapp(phone, username, self.user_data['id'])
-            QMessageBox.information(self, "Sent", f"Reminder opened for {username}")
+            self._worker = WaSendWorker(
+                phone, load_message_template().replace('{username}', username))
+            self._worker.finished.connect(
+                lambda ph, res: self._on_sent(ph, res, username))
+            self._worker.start()
 
-
-# ── Helper: Send WhatsApp ────────────────────────────────────────
-def send_whatsapp(phone, username, user_id):
-    """Open WhatsApp web with pre-filled message and record on server."""
-    template = load_message_template()
-    message = template.replace('{username}', username)
-    phone_clean = phone.replace('+', '')
-    url = f"https://wa.me/{phone_clean}?text={urllib.parse.quote(message)}"
-    webbrowser.open(url)
-
-    # Record reminder on server
-    try:
-        requests.post(f"{SERVER_URL}/admin/api/send_reminder/{user_id}",
-                      headers=HEADERS, timeout=10)
-    except Exception:
-        pass
+    def _on_sent(self, phone, result, username):
+        if result['success']:
+            # Record on server
+            try:
+                requests.post(
+                    f"{SERVER_URL}/admin/api/send_reminder/{self.user_data['id']}",
+                    headers=HEADERS, timeout=10)
+            except Exception:
+                pass
+            QMessageBox.information(self, "Sent",
+                                    f"✅ Reminder sent to {username}")
+        else:
+            QMessageBox.warning(self, "Failed",
+                                f"❌ {result['error']}")
 
 
 # ── Main Window ──────────────────────────────────────────────────
@@ -288,6 +537,22 @@ class AdminWindow(QMainWindow):
         header_layout.addWidget(title)
         header_layout.addStretch()
 
+        # WhatsApp connection controls
+        self.wa_status_label = QLabel("⚪ WhatsApp: Disconnected")
+        self.wa_status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
+        header_layout.addWidget(self.wa_status_label)
+
+        self.wa_connect_btn = QPushButton("🟢 Connect WA")
+        self.wa_connect_btn.setObjectName("sendBtn")
+        self.wa_connect_btn.clicked.connect(self.connect_whatsapp)
+        header_layout.addWidget(self.wa_connect_btn)
+
+        self.wa_disconnect_btn = QPushButton("🔴 Disconnect")
+        self.wa_disconnect_btn.setStyleSheet(f"background: {RED}; color: white; border: none;")
+        self.wa_disconnect_btn.clicked.connect(self.disconnect_whatsapp)
+        self.wa_disconnect_btn.setVisible(False)
+        header_layout.addWidget(self.wa_disconnect_btn)
+
         self.auto_check = QCheckBox("Auto-send @1PM")
         self.auto_check.setChecked(AUTO_SEND)
         self.auto_check.setStyleSheet(f"font-size: 12px; font-weight: 600;")
@@ -297,6 +562,11 @@ class AdminWindow(QMainWindow):
         refresh_btn.setObjectName("primaryBtn")
         refresh_btn.clicked.connect(self.load_users)
         header_layout.addWidget(refresh_btn)
+
+        add_user_btn = QPushButton("➕ Add Account")
+        add_user_btn.setObjectName("primaryBtn")
+        add_user_btn.clicked.connect(self.add_account)
+        header_layout.addWidget(add_user_btn)
 
         main_layout.addLayout(header_layout)
 
@@ -308,14 +578,17 @@ class AdminWindow(QMainWindow):
 
         # ── Table ──
         self.table = QTableWidget()
-        self.table.setColumnCount(10)
+        self.table.setColumnCount(12)
         self.table.setHorizontalHeaderLabels([
             "ID", "Username", "Last Exec", "Off Time",
-            "Go/No-Go", "Stroop", "Emoji", "Phone", "Last Message", "Action"
+            "Go/No-Go", "Stroop", "Emoji", "Phone", "Last Message",
+            "Send", "Edit", "Delete"
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(9, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(10, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(11, QHeaderView.ResizeMode.ResizeToContents)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -342,8 +615,31 @@ class AdminWindow(QMainWindow):
 
         self.tray_icon = QSystemTrayIcon(icon, self)
         tray_menu = QMenu()
+        tray_menu.setStyleSheet("""
+            QMenu {
+                background: #ffffff;
+                border: 1px solid #d0d0d0;
+                border-radius: 8px;
+                padding: 4px 0;
+            }
+            QMenu::item {
+                color: #1a1a1a;
+                padding: 8px 24px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+            QMenu::item:selected {
+                background: #e8eaf6;
+                color: #1a1a1a;
+            }
+            QMenu::separator {
+                height: 1px;
+                background: #e0e0e0;
+                margin: 4px 8px;
+            }
+        """)
 
-        show_action = QAction("Show Admin", self)
+        show_action = QAction("Show Admin Console", self)
         show_action.triggered.connect(self.show_window)
         tray_menu.addAction(show_action)
 
@@ -392,6 +688,9 @@ class AdminWindow(QMainWindow):
 
     def auto_send_reminders(self):
         """Fetch pending users and send WhatsApp reminders automatically."""
+        if not wa_sender.is_ready():
+            self.statusBar().showMessage("⚠️ Auto-send skipped: WhatsApp not connected")
+            return
         self.statusBar().showMessage("🔔 Checking for pending users...")
 
         worker = ApiWorker(f"{SERVER_URL}/admin/api/check_pending")
@@ -401,17 +700,19 @@ class AdminWindow(QMainWindow):
         worker.start()
 
     def _on_pending_received(self, pending_users):
-        count = 0
-        for user in pending_users:
-            phone = user.get('phone_number', '')
-            if phone:
-                send_whatsapp(phone, user['username'], user['id'])
-                count += 1
+        users_with_phone = [u for u in pending_users if u.get('phone_number')]
+        if not users_with_phone:
+            msg = "✅ All users have completed today's test"
+            self.statusBar().showMessage(msg)
+            self.tray_icon.showMessage("CogStim Reminder", msg,
+                                       QSystemTrayIcon.MessageIcon.Information, 5000)
+            return
 
-        msg = f"✅ Auto-reminders sent to {count} user(s)" if count else "✅ All users have completed today's test"
-        self.statusBar().showMessage(msg)
-        self.tray_icon.showMessage("CogStim Reminder", msg, QSystemTrayIcon.MessageIcon.Information, 5000)
-        self.load_users()
+        template = load_message_template()
+        self._batch_worker = WaBatchWorker(users_with_phone, template)
+        self._batch_worker.progress.connect(self._on_batch_progress)
+        self._batch_worker.done.connect(self._on_batch_done)
+        self._batch_worker.start()
 
     def load_users(self):
         self.statusBar().showMessage("Loading users...")
@@ -452,16 +753,49 @@ class AdminWindow(QMainWindow):
             # Send button
             send_btn = QPushButton("📲 Send")
             send_btn.setObjectName("sendBtn")
-            send_btn.setEnabled(bool(u.get('phone_number')))
+            send_btn.setEnabled(bool(u.get('phone_number')) and wa_sender.is_ready())
             uid, uname, uphone = u['id'], u['username'], u.get('phone_number', '')
             send_btn.clicked.connect(lambda checked, uid=uid, uname=uname, uphone=uphone: self._send_clicked(uid, uname, uphone))
             self.table.setCellWidget(row, 9, send_btn)
 
+            # Edit button
+            edit_btn = QPushButton("✏️ Edit")
+            edit_btn.setStyleSheet(f"background: {ORANGE}; color: #1a1a1a; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 11px;")
+            edit_btn.clicked.connect(lambda checked, _u=u: self.edit_account(_u))
+            self.table.setCellWidget(row, 10, edit_btn)
+
+            # Delete button
+            del_btn = QPushButton("🗑️ Del")
+            del_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 11px;")
+            del_btn.clicked.connect(lambda checked, _uid=uid, _uname=uname: self.delete_account(_uid, _uname))
+            self.table.setCellWidget(row, 11, del_btn)
+
     def _send_clicked(self, uid, uname, uphone):
+        if not wa_sender.is_ready():
+            QMessageBox.warning(self, "Not Connected",
+                                "Connect WhatsApp first using the 🟢 Connect WA button.")
+            return
         if uphone:
-            send_whatsapp(uphone, uname, uid)
-            self.statusBar().showMessage(f"📲 Reminder opened for {uname}")
+            template = load_message_template()
+            msg = template.replace('{username}', uname)
+            self.statusBar().showMessage(f"📲 Sending to {uname}...")
+            worker = WaSendWorker(uphone, msg)
+            worker.finished.connect(
+                lambda ph, res, _uid=uid, _uname=uname: self._on_single_sent(ph, res, _uid, _uname))
+            self.workers.append(worker)
+            worker.start()
+
+    def _on_single_sent(self, phone, result, uid, uname):
+        if result['success']:
+            try:
+                requests.post(f"{SERVER_URL}/admin/api/send_reminder/{uid}",
+                              headers=HEADERS, timeout=10)
+            except Exception:
+                pass
+            self.statusBar().showMessage(f"✅ Reminder sent to {uname}")
             QTimer.singleShot(2000, self.load_users)
+        else:
+            self.statusBar().showMessage(f"❌ Failed for {uname}: {result['error']}")
 
     def filter_table(self, text):
         text = text.lower()
@@ -491,6 +825,62 @@ class AdminWindow(QMainWindow):
         dialog.setStyleSheet(STYLESHEET)
         dialog.exec()
 
+    # ── Account management ─────────────────────────
+    def add_account(self):
+        dialog = AccountFormDialog(self)
+        dialog.setStyleSheet(STYLESHEET)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_data:
+            data = dialog.result_data
+            self.statusBar().showMessage("Creating account...")
+            worker = ApiWorker(f"{SERVER_URL}/admin/api/users/create", 'POST', data)
+            worker.finished.connect(self._on_account_created)
+            worker.error.connect(self._on_account_error)
+            self.workers.append(worker)
+            worker.start()
+
+    def _on_account_created(self, result):
+        self.statusBar().showMessage(f"✅ {result.get('message', 'Account created')}")
+        QMessageBox.information(self, "Success", result.get('message', 'Account created successfully.'))
+        self.load_users()
+
+    def edit_account(self, user_data):
+        dialog = AccountFormDialog(self, user_data=user_data)
+        dialog.setStyleSheet(STYLESHEET)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_data:
+            data = dialog.result_data
+            uid = user_data['id']
+            self.statusBar().showMessage("Updating account...")
+            worker = ApiWorker(f"{SERVER_URL}/admin/api/users/{uid}/edit", 'PUT', data)
+            worker.finished.connect(self._on_account_edited)
+            worker.error.connect(self._on_account_error)
+            self.workers.append(worker)
+            worker.start()
+
+    def _on_account_edited(self, result):
+        self.statusBar().showMessage(f"✅ {result.get('message', 'Account updated')}")
+        QMessageBox.information(self, "Success", result.get('message', 'Account updated successfully.'))
+        self.load_users()
+
+    def delete_account(self, user_id, username):
+        dialog = ConfirmDeleteDialog(username, self)
+        dialog.setStyleSheet(STYLESHEET)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.statusBar().showMessage(f"Deleting {username}...")
+            worker = ApiWorker(f"{SERVER_URL}/admin/api/users/{user_id}/delete", 'DELETE')
+            worker.finished.connect(self._on_account_deleted)
+            worker.error.connect(self._on_account_error)
+            self.workers.append(worker)
+            worker.start()
+
+    def _on_account_deleted(self, result):
+        self.statusBar().showMessage(f"✅ {result.get('message', 'Account deleted')}")
+        QMessageBox.information(self, "Deleted", result.get('message', 'Account deleted successfully.'))
+        self.load_users()
+
+    def _on_account_error(self, error):
+        self.statusBar().showMessage(f"❌ Error: {error}")
+        QMessageBox.warning(self, "Error", f"Operation failed:\n{error}")
+
     # ── Window management ────────────────────────
     def closeEvent(self, event):
         """Minimize to tray instead of closing."""
@@ -512,8 +902,58 @@ class AdminWindow(QMainWindow):
         self.raise_()
 
     def quit_app(self):
+        wa_sender.quit()
         self.tray_icon.hide()
         QApplication.quit()
+
+    # ── WhatsApp connection ───────────────────────
+    def connect_whatsapp(self):
+        self.wa_connect_btn.setEnabled(False)
+        self.wa_connect_btn.setText("⏳ Connecting...")
+        self.statusBar().showMessage("Starting WhatsApp Web browser... Scan QR if needed.")
+
+        self._wa_browser_worker = WaBrowserWorker()
+        self._wa_browser_worker.ready.connect(self._on_wa_ready)
+        self._wa_browser_worker.failed.connect(self._on_wa_failed)
+        self.workers.append(self._wa_browser_worker)
+        self._wa_browser_worker.start()
+
+    def _on_wa_ready(self):
+        self.wa_status_label.setText("🟢 WhatsApp: Connected")
+        self.wa_status_label.setStyleSheet(f"color: {GREEN}; font-size: 11px; font-weight: 600;")
+        self.wa_connect_btn.setVisible(False)
+        self.wa_disconnect_btn.setVisible(True)
+        self.statusBar().showMessage("✅ WhatsApp Web connected!")
+        self.load_users()  # refresh to enable Send buttons
+
+    def _on_wa_failed(self, error):
+        self.wa_connect_btn.setEnabled(True)
+        self.wa_connect_btn.setText("🟢 Connect WA")
+        self.wa_status_label.setText("🔴 WhatsApp: Failed")
+        self.wa_status_label.setStyleSheet(f"color: {RED}; font-size: 11px; font-weight: 600;")
+        self.statusBar().showMessage(f"❌ WhatsApp connection failed: {error}")
+        QMessageBox.warning(self, "Connection Failed", f"Could not connect to WhatsApp Web:\n{error}")
+
+    def disconnect_whatsapp(self):
+        wa_sender.quit()
+        self.wa_status_label.setText("⚪ WhatsApp: Disconnected")
+        self.wa_status_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 600;")
+        self.wa_connect_btn.setVisible(True)
+        self.wa_connect_btn.setEnabled(True)
+        self.wa_connect_btn.setText("🟢 Connect WA")
+        self.wa_disconnect_btn.setVisible(False)
+        self.statusBar().showMessage("WhatsApp disconnected.")
+        self.load_users()  # refresh to disable Send buttons
+
+    def _on_batch_progress(self, current, total, info, success):
+        self.statusBar().showMessage(f"[{current}/{total}] {info}")
+
+    def _on_batch_done(self, sent, failed):
+        msg = f"✅ Auto-send complete: {sent} sent, {failed} failed"
+        self.statusBar().showMessage(msg)
+        self.tray_icon.showMessage("CogStim Reminder", msg,
+                                   QSystemTrayIcon.MessageIcon.Information, 5000)
+        self.load_users()
 
 
 # ── Entry Point ──────────────────────────────────────────────────
