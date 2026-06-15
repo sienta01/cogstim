@@ -1,7 +1,7 @@
 # Cognitive Stimulation Assessment Platform
 
-![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
-![Release Date](https://img.shields.io/badge/release-2026--03--11-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
+![Release Date](https://img.shields.io/badge/release-2026--06--14-brightgreen.svg)
 ![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.0+-red.svg)
 
