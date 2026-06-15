@@ -586,9 +586,11 @@ class AdminWindow(QMainWindow):
         ])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(9, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(10, QHeaderView.ResizeMode.ResizeToContents)
-        self.table.horizontalHeader().setSectionResizeMode(11, QHeaderView.ResizeMode.ResizeToContents)
+        for col in (9, 10, 11):
+            self.table.horizontalHeader().setSectionResizeMode(col, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(9, 90)
+        self.table.setColumnWidth(10, 80)
+        self.table.setColumnWidth(11, 80)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -759,14 +761,16 @@ class AdminWindow(QMainWindow):
             self.table.setCellWidget(row, 9, send_btn)
 
             # Edit button
-            edit_btn = QPushButton("✏️ Edit")
-            edit_btn.setStyleSheet(f"background: {ORANGE}; color: #1a1a1a; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 11px;")
+            edit_btn = QPushButton("Edit")
+            edit_btn.setMinimumWidth(70)
+            edit_btn.setStyleSheet(f"background: {ORANGE}; color: #1a1a1a; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 11px;")
             edit_btn.clicked.connect(lambda checked, _u=u: self.edit_account(_u))
             self.table.setCellWidget(row, 10, edit_btn)
 
             # Delete button
-            del_btn = QPushButton("🗑️ Del")
-            del_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 11px;")
+            del_btn = QPushButton("Delete")
+            del_btn.setMinimumWidth(70)
+            del_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 11px;")
             del_btn.clicked.connect(lambda checked, _uid=uid, _uname=uname: self.delete_account(_uid, _uname))
             self.table.setCellWidget(row, 11, del_btn)
 
