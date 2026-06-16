@@ -1,7 +1,7 @@
 """
 Cognitive Stimulation Application
-Version: 3.1.0
-Release Date: March 11, 2026
+Version: 3.1.1
+Release Date: June 17, 2026
 Author: Timothy Subroto
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
@@ -13,6 +13,14 @@ import random
 import os
 import re
 import datetime
+import time
+
+# Set Timezone to UTC+8 (Indonesia/Jakarta)
+os.environ["TZ"] = "Asia/Makassar"
+try:
+    time.tzset()
+except AttributeError:
+    pass  # time.tzset() is Unix-only, this allows local Windows development to continue working
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 

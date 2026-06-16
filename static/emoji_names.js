@@ -1,4 +1,3 @@
-// Emoji to Indonesian name mapping
 const emojiNames = {
     '😀': 'Wajah',
     '☀️': 'Matahari',

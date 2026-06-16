@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.1.1] - 2026-06-17
+
+### Added
+- Configured timezone to UTC+8 (Asia/Makassar) for proper server-side time tracking
+- Added admin app to manage user
+- Added admin api in app.py to get and display all scores of all users
+
+### Documentation
+- Updated README, USER_GUIDE, and technical documents to reflect new tests and workflow
+
+---
+
 ## [2.3.0] - 2026-03-11
 
 ### Added
