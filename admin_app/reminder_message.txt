@@ -1,5 +1,6 @@
-Halo {username}, ini pengingat untuk melakukan tes stimulasi kognitif hari ini. 🧠
+Selamat siang *{username}*, mohon maaf mengganggu waktunya. Saya dr. Tim, residen neurologi (saraf) RS Ngoerah Denpasar.
+Izin mengingatkan untuk mengerjakan latihan kognitif hari ini.
 
-Silakan kunjungi aplikasi CogStim untuk menyelesaikan tes harian Anda.
+Link latihan: bit.ly/latihankognitif
 
-Terima kasih atas partisipasi Anda! 💪
+Terima kasih, semoga lekas pulih kembali 🙏

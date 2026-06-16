@@ -8,6 +8,7 @@ CogStim Desktop Admin App
 import sys
 import os
 import json
+import logging
 import requests
 from datetime import datetime, timedelta
 
@@ -20,7 +21,7 @@ from PyQt6.QtWidgets import (
     QSplitter, QStatusBar, QLineEdit, QGroupBox, QGridLayout, QCheckBox,
     QProgressDialog, QTextEdit
 )
-from PyQt6.QtCore import Qt, QTimer, QSize, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, QSize, QThread, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon, QFont, QColor, QAction, QPainter, QPixmap
 
 import matplotlib
@@ -108,7 +109,34 @@ STYLESHEET = f"""
     QCheckBox {{ color: {TEXT_PRIMARY}; spacing: 8px; }}
     QCheckBox::indicator {{ width: 18px; height: 18px; border-radius: 4px; border: 2px solid rgba(255,255,255,0.2); }}
     QCheckBox::indicator:checked {{ background: {ACCENT}; border-color: {ACCENT}; }}
+    QTextEdit#logOutput {{
+        background: #111320; color: #c8d0e0; font-family: 'Cascadia Code', 'Consolas', monospace;
+        font-size: 11px; border: 1px solid rgba(255,255,255,0.06); border-radius: 8px;
+        padding: 8px; selection-background-color: rgba(108,140,255,0.25);
+    }}
 """
+
+
+# ── Qt Log Handler ───────────────────────────────────────────────
+class LogSignalBridge(QObject):
+    """Bridge to forward log records from any thread to the GUI thread."""
+    new_record = pyqtSignal(str)
+
+
+class QtLogHandler(logging.Handler):
+    """A logging.Handler that emits a Qt signal for every log record."""
+    def __init__(self):
+        super().__init__()
+        self.bridge = LogSignalBridge()
+        self.setFormatter(logging.Formatter(
+            "[%(asctime)s] %(levelname)-7s  %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            self.bridge.new_record.emit(msg)
+        except Exception:
+            pass
 
 
 # ── API Worker Thread ────────────────────────────────────────────
@@ -578,31 +606,96 @@ class AdminWindow(QMainWindow):
 
         # ── Table ──
         self.table = QTableWidget()
-        self.table.setColumnCount(12)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
             "ID", "Username", "Last Exec", "Off Time",
             "Go/No-Go", "Stroop", "Emoji", "Phone", "Last Message",
-            "Send", "Edit", "Delete"
+            "Actions"
         ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
-        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        for col in (9, 10, 11):
-            self.table.horizontalHeader().setSectionResizeMode(col, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(9, 90)
-        self.table.setColumnWidth(10, 80)
-        self.table.setColumnWidth(11, 80)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setStretchLastSection(True)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        # Set sensible default widths
+        for col, w in enumerate([40, 120, 110, 80, 70, 70, 70, 110, 110, 200]):
+            self.table.setColumnWidth(col, w)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet(self.table.styleSheet() + "alternate-background-color: rgba(255,255,255,0.02);")
         self.table.cellDoubleClicked.connect(self.on_row_double_clicked)
-        main_layout.addWidget(self.table, 1)
+
+        # ── Log Output Panel (resizable via splitter) ──
+        log_container = QWidget()
+        log_layout = QVBoxLayout(log_container)
+        log_layout.setContentsMargins(0, 4, 0, 0)
+        log_layout.setSpacing(4)
+
+        log_header_layout = QHBoxLayout()
+        log_label = QLabel("📋 Log Output")
+        log_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px; font-weight: 700;")
+        log_header_layout.addWidget(log_label)
+        log_header_layout.addStretch()
+
+        clear_log_btn = QPushButton("Clear")
+        clear_log_btn.setFixedHeight(24)
+        clear_log_btn.setStyleSheet(f"font-size: 10px; padding: 2px 10px;")
+        clear_log_btn.clicked.connect(lambda: self.log_output.clear())
+        log_header_layout.addWidget(clear_log_btn)
+        log_layout.addLayout(log_header_layout)
+
+        self.log_output = QTextEdit()
+        self.log_output.setObjectName("logOutput")
+        self.log_output.setReadOnly(True)
+        self.log_output.setPlaceholderText("WhatsApp automation logs will appear here...")
+        log_layout.addWidget(self.log_output)
+
+        # ── Splitter: Table ↕ Log ──
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        splitter.addWidget(self.table)
+        splitter.addWidget(log_container)
+        splitter.setStretchFactor(0, 3)   # table gets 75%
+        splitter.setStretchFactor(1, 1)   # log gets 25%
+        splitter.setHandleWidth(6)
+        splitter.setStyleSheet(f"""
+            QSplitter::handle {{
+                background: rgba(255,255,255,0.06);
+                border-radius: 3px;
+                margin: 2px 40px;
+            }}
+            QSplitter::handle:hover {{
+                background: {ACCENT};
+            }}
+        """)
+        main_layout.addWidget(splitter, 1)
+
+        # ── Attach log handler ──
+        self._qt_log_handler = QtLogHandler()
+        self._qt_log_handler.bridge.new_record.connect(self._append_log)
+        wa_logger = logging.getLogger("WhatsAppSender")
+        wa_logger.addHandler(self._qt_log_handler)
 
         # ── Status bar ──
         self.statusBar().showMessage("Ready")
         self.status_label = QLabel("")
         self.statusBar().addPermanentWidget(self.status_label)
+
+    def _append_log(self, text: str):
+        """Append a formatted log line to the output panel."""
+        # Color-code by level
+        if "ERROR" in text:
+            color = RED
+        elif "WARNING" in text:
+            color = ORANGE
+        elif "✅" in text:
+            color = GREEN
+        else:
+            color = "#c8d0e0"
+        self.log_output.append(f'<span style="color:{color}">{text}</span>')
+        # Auto-scroll to bottom
+        sb = self.log_output.verticalScrollBar()
+        sb.setValue(sb.maximum())
 
     def setup_tray(self):
         # Create a simple colored icon for the tray
@@ -733,6 +826,7 @@ class AdminWindow(QMainWindow):
     def populate_table(self, data):
         self.table.setRowCount(len(data))
         for row, u in enumerate(data):
+            self.table.setRowHeight(row, 40)
             items = [
                 str(u['id']),
                 u['username'],
@@ -752,27 +846,34 @@ class AdminWindow(QMainWindow):
                     item.setFont(QFont('Segoe UI', 10, QFont.Weight.Bold))
                 self.table.setItem(row, col, item)
 
-            # Send button
-            send_btn = QPushButton("📲 Send")
-            send_btn.setObjectName("sendBtn")
-            send_btn.setEnabled(bool(u.get('phone_number')) and wa_sender.is_ready())
             uid, uname, uphone = u['id'], u['username'], u.get('phone_number', '')
-            send_btn.clicked.connect(lambda checked, uid=uid, uname=uname, uphone=uphone: self._send_clicked(uid, uname, uphone))
-            self.table.setCellWidget(row, 9, send_btn)
 
-            # Edit button
+            # Actions column — Send | Edit | Delete in one cell
+            actions_widget = QWidget()
+            actions_layout = QHBoxLayout(actions_widget)
+            actions_layout.setContentsMargins(4, 2, 4, 2)
+            actions_layout.setSpacing(4)
+
+            send_btn = QPushButton("Send")
+            send_btn.setObjectName("sendBtn")
+            send_btn.setFixedHeight(28)
+            send_btn.setEnabled(bool(u.get('phone_number')))
+            send_btn.clicked.connect(lambda checked, uid=uid, uname=uname, uphone=uphone: self._send_clicked(uid, uname, uphone))
+            actions_layout.addWidget(send_btn)
+
             edit_btn = QPushButton("Edit")
-            edit_btn.setMinimumWidth(70)
+            edit_btn.setFixedHeight(28)
             edit_btn.setStyleSheet(f"background: {ORANGE}; color: #1a1a1a; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 11px;")
             edit_btn.clicked.connect(lambda checked, _u=u: self.edit_account(_u))
-            self.table.setCellWidget(row, 10, edit_btn)
+            actions_layout.addWidget(edit_btn)
 
-            # Delete button
-            del_btn = QPushButton("Delete")
-            del_btn.setMinimumWidth(70)
+            del_btn = QPushButton("Del")
+            del_btn.setFixedHeight(28)
             del_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 11px;")
             del_btn.clicked.connect(lambda checked, _uid=uid, _uname=uname: self.delete_account(_uid, _uname))
-            self.table.setCellWidget(row, 11, del_btn)
+            actions_layout.addWidget(del_btn)
+
+            self.table.setCellWidget(row, 9, actions_widget)
 
     def _send_clicked(self, uid, uname, uphone):
         if not wa_sender.is_ready():

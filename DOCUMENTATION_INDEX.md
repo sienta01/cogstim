@@ -2,8 +2,8 @@
 
 ## 📚 Complete Documentation for Cognitive Stimulation Assessment Platform
 
-**Current Version**: 2.3.0  
-**Last Updated**: March 11, 2026  
+**Current Version**: 3.1.0  
+**Last Updated**: 2026-06-16  
 **Status**: Production Ready ✅
 
 ---
@@ -225,7 +225,7 @@ Diagrams and flowcharts:
 
 ```
 PROJECT ROOT
-├── VERSION                      (Version: 2.3.0)
+├── VERSION                      (Version: 3.1.0)
 ├── README.md                    ⭐ Main entry point
 ├── CHANGELOG.md                 ⭐ Version history
 ├── app.py                       (with version info)
@@ -308,13 +308,13 @@ A: See [README.md - Troubleshooting](./README.md#-troubleshooting)
 
 ## 🔒 Versioning
 
-- **App Version**: 2.3.0 (Current)
-- **Documentation Version**: 2.2 
-- **Last Updated**: March 11, 2026
+- **App Version**: 3.1.0 (Current)
+- **Documentation Version**: 3.1 
+- **Last Updated**: June 16, 2026
 - **Python Version**: 3.7+
 - **Framework**: Flask 2.0+
 
-### What's New in v2.3.0
+### What's New in v3.1.0
 - Dashboard redesign and removal of patient management
 - Geriatric-friendly UI across the application
 - Admin roles for score viewing
@@ -348,7 +348,6 @@ A: See [README.md - Troubleshooting](./README.md#-troubleshooting)
 
 ---
 
-**Last Updated**: March 11, 2026  
-**Version**: 2.3.0  
+**Last Updated**: June 16, 2026  
+**Version**: 3.1.0  
 **Status**: Production Ready ✅
-

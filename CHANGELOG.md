@@ -121,7 +121,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `app.py` (379 lines) - Complete backend rewrite with new test logic
 - `templates/game.html` - Completely redesigned universal test interface
 - `templates/scores.html` - Updated with test type and accuracy tracking
-- Database schema updated
+- For database schema details, see `models.py`
+- When contributing, please follow the established patterns in `admin_desktop.py`
+- Update `VERSION` file and this `CHANGELOG.md` when making new releases
 
 ### New Files
 - `templates/select_test.html` - Test selection interface
@@ -161,7 +163,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Compatibility
 
-### Current Version: 2.3.0
+### Current Version: 3.1.0
 - Python 3.7+
 - Flask 2.0+
 - SQLAlchemy compatible

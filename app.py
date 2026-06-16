@@ -1,6 +1,6 @@
 """
 Cognitive Stimulation Application
-Version: 3.0.0
+Version: 3.1.0
 Release Date: March 11, 2026
 Author: Timothy Subroto
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
@@ -22,9 +22,9 @@ def load_version():
     try:
         with open(version_file, 'r', encoding='utf-8') as f:
             return f.read().strip()
-    except IOError:
-        return "3.0.0"
-
+    except Exception:
+        return "3.1.0"
+        
 __version__ = load_version()
 
 app = Flask(__name__)
