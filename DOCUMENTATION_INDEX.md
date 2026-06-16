@@ -350,4 +350,4 @@ A: See [README.md - Troubleshooting](./README.md#-troubleshooting)
 
 **Last Updated**: June 16, 2026  
 **Version**: 3.1.0  
-**Status**: Production Ready ✅
+**Status**: Beta testing
