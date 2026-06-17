@@ -1,7 +1,7 @@
 """
 Cognitive Stimulation Application
-Version: 3.1.1
-Release Date: June 17, 2026
+Version: 3.2.0
+Release Date: June 18, 2026
 Author: Timothy Subroto
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
@@ -107,11 +107,49 @@ def dashboard():
     if "user_id" not in session:
         return redirect(url_for("login"))
     user = User.query.get(session["user_id"])
-    user_scores = Score.query.filter_by(user_id=user.id).order_by(Score.timestamp.desc()).limit(10).all() if user else []
     now = datetime.datetime.now()
     username = user.username if user else ""
     is_admin = session.get("is_admin", False)
-    return render_template("dashboard.html", scores=user_scores, now=now, username=username, is_admin=is_admin)
+    
+    raw_scores = Score.query.filter_by(user_id=user.id).order_by(Score.timestamp.asc()).all() if user else []
+    
+    from collections import defaultdict
+    grouped_by_date = defaultdict(lambda: {'go_no_go': '-', 'stroop': '-', 'emoji': '-'})
+    for s in raw_scores:
+        if s.timestamp:
+            date_obj = s.timestamp.date()
+            grouped_by_date[date_obj][s.test_type] = s.score
+
+    # Sort descending for table
+    table_data = []
+    for d in sorted(grouped_by_date.keys(), reverse=True):
+        table_data.append({
+            'date': d.strftime('%d/%m/%Y'),
+            'go_no_go': grouped_by_date[d]['go_no_go'],
+            'stroop': grouped_by_date[d]['stroop'],
+            'emoji': grouped_by_date[d]['emoji']
+        })
+        
+    # Chart data (ascending order)
+    chart_labels = []
+    chart_go_no_go = []
+    chart_stroop = []
+    chart_emoji = []
+    
+    for d in sorted(grouped_by_date.keys()):
+        chart_labels.append(d.strftime('%d/%m/%Y'))
+        chart_go_no_go.append(grouped_by_date[d]['go_no_go'] if grouped_by_date[d]['go_no_go'] != '-' else None)
+        chart_stroop.append(grouped_by_date[d]['stroop'] if grouped_by_date[d]['stroop'] != '-' else None)
+        chart_emoji.append(grouped_by_date[d]['emoji'] if grouped_by_date[d]['emoji'] != '-' else None)
+        
+    chart_data = {
+        'labels': chart_labels,
+        'go_no_go': chart_go_no_go,
+        'stroop': chart_stroop,
+        'emoji': chart_emoji
+    }
+
+    return render_template("dashboard.html", scores=table_data, chart_data=chart_data, now=now, username=username, is_admin=is_admin)
 
 @app.route("/reference")
 def reference():
@@ -564,19 +602,7 @@ def test_results():
 def index():
     return redirect(url_for("dashboard"))
 
-@app.route("/scores")
-def scores():
-    if "user_id" not in session:
-        return redirect(url_for("login"))
 
-    is_admin = session.get("is_admin", False)
-    if is_admin:
-        # Admin can see all scores from all users
-        user_scores = Score.query.order_by(Score.timestamp.desc()).limit(200).all()
-    else:
-        # Normal user sees only their own scores
-        user_scores = Score.query.filter_by(user_id=session["user_id"]).order_by(Score.timestamp.desc()).limit(100).all()
-    return render_template("scores.html", scores=user_scores, is_admin=is_admin)
 
 
 # ── Admin Panel (Web) ──────────────────────────────────────────────

@@ -253,7 +253,6 @@
     {% if is_admin %}
     <div style="margin-bottom: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
         <a href="/admin" class="admin-scores-link">🛡️ Admin Panel</a>
-        <a href="/scores" class="admin-scores-link">📊 Lihat Semua Skor</a>
     </div>
     {% endif %}
 
@@ -272,39 +271,91 @@
         Belum ada skor. Tekan <strong>Mulai Tes</strong> untuk memulai!
     </div>
     {% else %}
-    <table class="score-table highlight centered">
-        <thead>
-            <tr>
-                <th>Tipe Tes</th>
-                <th>Skor</th>
-                <th>Akurasi</th>
-                <th>Latensi</th>
-                <th>Waktu</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for score in scores %}
-            <tr>
-                <td>
-                    {% if score.test_type == 'go_no_go' %}
-                    <span class="test-badge go-no-go">🎯 Go/No-Go</span>
-                    {% elif score.test_type == 'stroop' %}
-                    <span class="test-badge stroop">🎨 Stroop</span>
-                    {% elif score.test_type == 'emoji' %}
-                    <span class="test-badge emoji">😀 Emoji</span>
-                    {% else %}
-                    {{ score.test_type }}
-                    {% endif %}
-                </td>
-                <td><strong>{{ score.score }}</strong></td>
-                <td>{% if score.accuracy %}{{ "%.1f"|format(score.accuracy) }}%{% else %}-{% endif %}</td>
-                <td>{% if score.reaction_time %}{{ score.reaction_time|round|int }} ms{% else %}-{% endif %}</td>
-                <td>{{ score.timestamp.strftime('%d/%m/%Y %H:%M') if score.timestamp else '-' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <a href="/scores" class="view-all-link">Lihat semua skor →</a>
+    <div style="overflow-x: auto;">
+        <table class="score-table highlight centered">
+            <thead>
+                <tr>
+                    <th>Test Date</th>
+                    <th>Tes Kecekatan</th>
+                    <th>Tes Warna</th>
+                    <th>Tes Gambar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in scores %}
+                <tr>
+                    <td><strong>{{ row.date }}</strong></td>
+                    <td>{{ row.go_no_go }}</td>
+                    <td>{{ row.stroop }}</td>
+                    <td>{{ row.emoji }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Chart Section -->
+    <div style="margin-top: 30px;">
+        <canvas id="scoreChart"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const ctx = document.getElementById('scoreChart').getContext('2d');
+        const chartData = {{ chart_data | tojson | safe }};
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    {
+                        label: 'Tes Kecekatan (Go/No-Go)',
+                        data: chartData.go_no_go,
+                        borderColor: '#e65100',
+                        backgroundColor: '#fff3e0',
+                        tension: 0.3,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Tes Warna (Stroop)',
+                        data: chartData.stroop,
+                        borderColor: '#283593',
+                        backgroundColor: '#e8eaf6',
+                        tension: 0.3,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'Tes Gambar (Emoji)',
+                        data: chartData.emoji,
+                        borderColor: '#2e7d32',
+                        backgroundColor: '#e8f5e9',
+                        tension: 0.3,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        borderWidth: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+    </script>
     {% endif %}
     </div>
 </body>

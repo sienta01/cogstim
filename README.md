@@ -477,9 +477,3 @@ cogstim/
     ├── DOCUMENTATION_INDEX.md     # Navigation guide
     └── PROJECT_COMPLETION.md      # Project status
 ```
-
----
-
-**Last Updated**: March 11, 2026  
-**Version**: 3.1.0  
-**License**: Proprietary / Clinical Use Only ✅
