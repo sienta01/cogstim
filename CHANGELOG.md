@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-### [3.2.0] - 2026-06-18
+### [3.3.0] - 2026-06-21
 
 ### Added
 - Graph for scores
+- Latency score display ("Waktu Reaksi") across all cognitive tests (in-game finish screens and final test results)
 
 ### Removed
 - removed scores.html
+- whatsapp send button
 
 ## [3.1.1] - 2026-06-17
 
@@ -183,7 +185,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Compatibility
 
-### Current Version: 3.1.0
+### Current Version: 3.3.0
 - Python 3.7+
 - Flask 2.0+
 - SQLAlchemy compatible

@@ -191,7 +191,6 @@
         </div>
 
         <div class="action-buttons">
-            <a href="/scores" class="btn-action">📊 Lihat Semua Skor</a>
             <a href="/dashboard" class="btn-action">🏠 Halaman Utama</a>
         </div>
     </div>
@@ -215,9 +214,9 @@
             container.innerHTML = '';
 
             const testInfo = {
-                'go_no_go': { emoji: '🎯', name: 'Tes Kecekatan' },
-                'stroop': { emoji: '🎨', name: 'Tes Warna Stroop' },
-                'emoji': { emoji: '🎭', name: 'Tes Pencocokan Emoji' }
+                'go_no_go': { emoji: '🎯', name: 'Latihan Kecekatan' },
+                'stroop': { emoji: '🎨', name: 'Latihan Warna Stroop' },
+                'emoji': { emoji: '🎭', name: 'Latihan Pencocokan Emoji' }
             };
 
             for (const [testType, scores] of Object.entries(results)) {
@@ -227,13 +226,13 @@
                     
                     const box = document.createElement('div');
                     box.className = 'test-result-box';
-                    const latencyHtml = scores.avg_latency ? `<div class="test-accuracy">Latensi: ${scores.avg_latency} ms</div>` : '';
+                    const avgLatency = scores.avg_latency || 0;
                     box.innerHTML = `
                         <div class="test-emoji">${info.emoji}</div>
                         <div class="test-name">${info.name}</div>
                         <div class="test-score">${scores.score}</div>
                         <div class="test-accuracy">${scores.correct_count}/${scores.total_count} | Akurasi: ${accuracy}%</div>
-                        ${latencyHtml}
+                        <div class="test-accuracy">Waktu Reaksi: ${avgLatency} ms</div>
                     `;
                     container.appendChild(box);
                 }

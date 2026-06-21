@@ -368,8 +368,9 @@
                 <div class="accuracy-info">
                     <span id="accuracyText">Akurasi: 100%</span>
                 </div>
-                <a href="/scores" class="scores-btn">Lihat Semua Skor →</a>
-                <br><br>
+                <div class="accuracy-info">
+                    <span id="latencyText">Waktu Reaksi: 0 ms</span>
+                </div>
                 <a href="/dashboard" class="scores-btn">Kembali ke Dashboard</a>
             </div>
         </div>
@@ -693,6 +694,8 @@
 
         document.getElementById("finalScore").innerText = result.score;
         document.getElementById("accuracyText").innerText = `✓ ${correct}/${total} | Akurasi: ${accuracy}%`;
+        const avgLatency = result.avg_latency || 0;
+        document.getElementById("latencyText").innerText = `Waktu Reaksi: ${avgLatency} ms`;
     }
 
     function updateQuestionCounter() {
@@ -701,13 +704,13 @@
 
     // Initialize
     if (testType === 'go_no_go') {
-        document.getElementById("testTitle").innerText = "🎯 Tes Kecekatan";
+        document.getElementById("testTitle").innerText = "🎯 Latihan Kecekatan";
         document.getElementById("goNoGoTest").style.display = "block";
     } else if (testType === 'stroop') {
-        document.getElementById("testTitle").innerText = "🎨 Tes Warna Stroop";
+        document.getElementById("testTitle").innerText = "🎨 Latihan Warna Stroop";
         document.getElementById("stroopTest").style.display = "block";
     } else if (testType === 'emoji') {
-        document.getElementById("testTitle").innerText = "🎭 Tes Pencocokan Gambar";
+        document.getElementById("testTitle").innerText = "🎭 Latihan Pencocokan Gambar";
         document.getElementById("emojiTest").style.display = "block";
     }
 

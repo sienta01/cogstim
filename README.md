@@ -1,7 +1,7 @@
 # CogStim Platform
 
-![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)
-![Release Date](https://img.shields.io/badge/release-2026--06--14-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)
+![Release Date](https://img.shields.io/badge/release-2026--06--21-brightgreen.svg)
 ![Python](https://img.shields.io/badge/python-3.7+-blue.svg)
 ![Flask](https://img.shields.io/badge/flask-2.0+-red.svg)
 
@@ -348,13 +348,13 @@ Solution:
 ### Database Schema Info
 - Database Path: `database/cogstim.db`
 - Tables: `users`, `test_results`, `admin_logs`
-- Version: 3.1.0
+- Version: 3.3.0
 
 ---
 
 ## 📝 Version Information
 
-### Current Version: 3.1.0
+### Current Version: 3.3.0
 
 ### Version History
 See [CHANGELOG.md](./CHANGELOG.md) for complete version history and release notes.
@@ -425,10 +425,10 @@ For commercial use, contact the development team.
 ## 👥 Development Team
 
 **Cognitive Stimulation Assessment Platform**
-- Version: 3.1.0
+- Version: 3.3.0
 - Framework: Flask + SQLAlchemy + SQLite
 - Python: 3.7+
-- Last Updated: March 11, 2026
+- Last Updated: June 21, 2026
 
 ---
 

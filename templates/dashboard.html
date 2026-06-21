@@ -258,7 +258,7 @@
 
     <!-- Start Game Button -->
     <div class="start-game-section">
-        <a href="/select_test" class="start-game-btn" id="startGameBtn">🎮 Mulai Tes</a>
+        <a href="/select_test" class="start-game-btn" id="startGameBtn">🎮 Mulai Latihan</a>
     </div>
 
     <hr class="divider">
@@ -268,7 +268,7 @@
 
     {% if scores|length == 0 %}
     <div class="no-scores-msg">
-        Belum ada skor. Tekan <strong>Mulai Tes</strong> untuk memulai!
+        Belum ada skor. Tekan <strong>Mulai Latihan</strong> untuk memulai!
     </div>
     {% else %}
     <div style="overflow-x: auto;">
@@ -276,9 +276,9 @@
             <thead>
                 <tr>
                     <th>Test Date</th>
-                    <th>Tes Kecekatan</th>
-                    <th>Tes Warna</th>
-                    <th>Tes Gambar</th>
+                    <th>Latihan Kecekatan</th>
+                    <th>Latihan Warna</th>
+                    <th>Latihan Gambar</th>
                 </tr>
             </thead>
             <tbody>
@@ -299,9 +299,10 @@
         <canvas id="scoreChart"></canvas>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script id="chart-data" type="application/json">{{ chart_data | tojson | safe }}</script>
     <script>
         const ctx = document.getElementById('scoreChart').getContext('2d');
-        const chartData = {{ chart_data | tojson | safe }};
+        const chartData = JSON.parse(document.getElementById('chart-data').textContent);
         
         new Chart(ctx, {
             type: 'line',
@@ -309,7 +310,7 @@
                 labels: chartData.labels,
                 datasets: [
                     {
-                        label: 'Tes Kecekatan (Go/No-Go)',
+                        label: 'Latihan Kecekatan (Go/No-Go)',
                         data: chartData.go_no_go,
                         borderColor: '#e65100',
                         backgroundColor: '#fff3e0',
@@ -319,7 +320,7 @@
                         borderWidth: 2
                     },
                     {
-                        label: 'Tes Warna (Stroop)',
+                        label: 'Latihan Warna (Stroop)',
                         data: chartData.stroop,
                         borderColor: '#283593',
                         backgroundColor: '#e8eaf6',
@@ -329,7 +330,7 @@
                         borderWidth: 2
                     },
                     {
-                        label: 'Tes Gambar (Emoji)',
+                        label: 'Latihan Gambar (Emoji)',
                         data: chartData.emoji,
                         borderColor: '#2e7d32',
                         backgroundColor: '#e8f5e9',

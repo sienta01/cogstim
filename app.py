@@ -1,7 +1,7 @@
 """
 Cognitive Stimulation Application
-Version: 3.2.0
-Release Date: June 18, 2026
+Version: 3.3.0
+Release Date: June 21, 2026
 Author: Timothy Subroto
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
@@ -31,7 +31,7 @@ def load_version():
         with open(version_file, 'r', encoding='utf-8') as f:
             return f.read().strip()
     except Exception:
-        return "3.1.0"
+        return "3.3.0"
         
 __version__ = load_version()
 
@@ -369,7 +369,8 @@ def next_trial():
             trials = session.get("go_no_go_trials", [])
         
         if trial_index >= len(trials):
-            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
+            avg_latency = round(session.get("total_reaction_time", 0) / session["total_count"]) if session.get("total_count", 0) > 0 else 0
+            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"], "avg_latency": avg_latency})
         
         trial = trials[trial_index]
         return jsonify({
@@ -385,7 +386,8 @@ def next_trial():
             trials = session.get("stroop_trials", [])
         
         if trial_index >= len(trials):
-            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
+            avg_latency = round(session.get("total_reaction_time", 0) / session["total_count"]) if session.get("total_count", 0) > 0 else 0
+            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"], "avg_latency": avg_latency})
         
         trial = trials[trial_index]
         return jsonify({
@@ -402,7 +404,8 @@ def next_trial():
             trials = session.get("emoji_trials", [])
         
         if trial_index >= len(trials):
-            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"]})
+            avg_latency = round(session.get("total_reaction_time", 0) / session["total_count"]) if session.get("total_count", 0) > 0 else 0
+            return jsonify({"finished": True, "score": session["score"], "correct": session["correct_count"], "total": session["total_count"], "avg_latency": avg_latency})
         
         trial = trials[trial_index]
         return jsonify({

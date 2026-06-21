@@ -9,7 +9,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             min-height: 100vh;
@@ -25,7 +29,7 @@
             justify-content: space-between;
             padding: 16px 32px;
             background: linear-gradient(135deg, #161822 0%, #1a1d2e 100%);
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -37,18 +41,23 @@
             font-weight: 800;
             background: linear-gradient(135deg, #6c8cff, #a78bfa);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
 
-        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+        .topbar-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
 
         .btn-outline {
             padding: 8px 20px;
             border-radius: 10px;
             font-size: 0.88rem;
             font-weight: 600;
-            border: 1.5px solid rgba(255,255,255,0.15);
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
             background: transparent;
             color: #b0b8d1;
             cursor: pointer;
@@ -57,8 +66,8 @@
         }
 
         .btn-outline:hover {
-            background: rgba(255,255,255,0.06);
-            border-color: rgba(255,255,255,0.25);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.25);
             color: #fff;
         }
 
@@ -90,7 +99,7 @@
 
         .stat-card {
             background: linear-gradient(135deg, #1a1d2e, #20243a);
-            border: 1px solid rgba(255,255,255,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 14px;
             padding: 20px;
             text-align: center;
@@ -101,6 +110,7 @@
             font-weight: 800;
             background: linear-gradient(135deg, #6c8cff, #a78bfa);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
@@ -134,8 +144,8 @@
         .search-box {
             padding: 8px 16px;
             border-radius: 10px;
-            border: 1.5px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.04);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
             color: #e4e6eb;
             font-size: 0.88rem;
             width: 240px;
@@ -148,12 +158,14 @@
             background: rgba(108, 140, 255, 0.06);
         }
 
-        .search-box::placeholder { color: #555a70; }
+        .search-box::placeholder {
+            color: #555a70;
+        }
 
         .data-table-wrapper {
             overflow-x: auto;
             border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.06);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .data-table {
@@ -172,18 +184,20 @@
             padding: 14px 16px;
             text-align: left;
             white-space: nowrap;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             cursor: pointer;
             user-select: none;
             transition: color 0.2s;
         }
 
-        .data-table th:hover { color: #6c8cff; }
+        .data-table th:hover {
+            color: #6c8cff;
+        }
 
         .data-table td {
             padding: 13px 16px;
             font-size: 0.9rem;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
             color: #c0c6d8;
         }
 
@@ -216,44 +230,45 @@
             font-weight: 600;
         }
 
-        .score-pill.go-nogo { background: rgba(255, 183, 77, 0.15); color: #ffb74d; }
-        .score-pill.stroop { background: rgba(108, 140, 255, 0.15); color: #6c8cff; }
-        .score-pill.emoji { background: rgba(102, 187, 106, 0.15); color: #66bb6a; }
-        .score-pill.none { background: rgba(255,255,255,0.05); color: #555a70; }
+        .score-pill.go-nogo {
+            background: rgba(255, 183, 77, 0.15);
+            color: #ffb74d;
+        }
 
-        .btn-send {
-            padding: 6px 14px;
-            border-radius: 8px;
-            border: none;
+        .score-pill.stroop {
+            background: rgba(108, 140, 255, 0.15);
+            color: #6c8cff;
+        }
+
+        .score-pill.emoji {
+            background: rgba(102, 187, 106, 0.15);
+            color: #66bb6a;
+        }
+
+        .score-pill.none {
+            background: rgba(255, 255, 255, 0.05);
+            color: #555a70;
+        }
+
+
+
+        .time-ago {
+            color: #8892b0;
             font-size: 0.82rem;
-            font-weight: 600;
-            background: linear-gradient(135deg, #25D366, #128C7E);
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
         }
 
-        .btn-send:hover {
-            box-shadow: 0 2px 12px rgba(37, 211, 102, 0.3);
-            transform: translateY(-1px);
+        .phone-cell {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.82rem;
+            color: #8892b0;
         }
-
-        .btn-send:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .time-ago { color: #8892b0; font-size: 0.82rem; }
-        .phone-cell { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem; color: #8892b0; }
 
         /* ── Modal ────────────────────────────────── */
         .modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(6px);
             z-index: 200;
             justify-content: center;
@@ -262,11 +277,13 @@
             overflow-y: auto;
         }
 
-        .modal-overlay.active { display: flex; }
+        .modal-overlay.active {
+            display: flex;
+        }
 
         .modal-content {
             background: #1a1d2e;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 18px;
             width: 90%;
             max-width: 800px;
@@ -276,8 +293,15 @@
         }
 
         @keyframes modalSlideIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .modal-header {
@@ -297,7 +321,7 @@
             width: 36px;
             height: 36px;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             background: transparent;
             color: #8892b0;
             font-size: 1.2rem;
@@ -309,7 +333,7 @@
         }
 
         .modal-close:hover {
-            background: rgba(255,255,255,0.08);
+            background: rgba(255, 255, 255, 0.08);
             color: #fff;
         }
 
@@ -321,8 +345,8 @@
         }
 
         .detail-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
             padding: 16px;
         }
@@ -343,8 +367,8 @@
         }
 
         .chart-container {
-            background: rgba(255,255,255,0.02);
-            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 14px;
             padding: 20px;
             margin-bottom: 16px;
@@ -357,31 +381,7 @@
             margin-bottom: 12px;
         }
 
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
 
-        .btn-send-large {
-            padding: 12px 28px;
-            border-radius: 12px;
-            border: none;
-            font-size: 0.95rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #25D366, #128C7E);
-            color: #fff;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-send-large:hover {
-            box-shadow: 0 4px 20px rgba(37, 211, 102, 0.35);
-            transform: translateY(-1px);
-        }
 
         /* ── Loading Spinner ──────────────────────── */
         .loading {
@@ -400,7 +400,11 @@
             margin: 0 auto 12px;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         /* ── Toast ────────────────────────────────── */
         .toast-container {
@@ -420,24 +424,70 @@
             font-weight: 600;
             color: #fff;
             animation: toastIn 0.3s ease, toastOut 0.3s ease 3.7s forwards;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         }
 
-        .toast.success { background: linear-gradient(135deg, #25D366, #128C7E); }
-        .toast.error { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-        .toast.info { background: linear-gradient(135deg, #6c8cff, #5a6fd6); }
+        .toast.success {
+            background: linear-gradient(135deg, #25D366, #128C7E);
+        }
 
-        @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
-        @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(10px); } }
+        .toast.error {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .toast.info {
+            background: linear-gradient(135deg, #6c8cff, #5a6fd6);
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(40px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
 
         /* ── Responsive ───────────────────────────── */
         @media (max-width: 768px) {
-            .topbar { padding: 14px 16px; }
-            .stats-row { padding: 16px 16px 8px; }
-            .table-section { padding: 16px; }
-            .modal-content { padding: 20px; }
-            .table-header { flex-direction: column; gap: 10px; }
-            .search-box { width: 100%; }
+            .topbar {
+                padding: 14px 16px;
+            }
+
+            .stats-row {
+                padding: 16px 16px 8px;
+            }
+
+            .table-section {
+                padding: 16px;
+            }
+
+            .modal-content {
+                padding: 20px;
+            }
+
+            .table-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .search-box {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -449,7 +499,8 @@
         <div class="topbar-actions">
             <button class="btn-outline" onclick="loadUsers()">🔄 Refresh</button>
             <a href="/dashboard" class="btn-outline">← Dashboard</a>
-            <a href="/logout" class="btn-primary" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Keluar</a>
+            <a href="/logout" class="btn-primary"
+                style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Keluar</a>
         </div>
     </div>
 
@@ -477,7 +528,8 @@
     <div class="table-section">
         <div class="table-header">
             <div class="table-title">📋 Daftar Pengguna</div>
-            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Cari pengguna..." oninput="filterTable()">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Cari pengguna..."
+                oninput="filterTable()">
         </div>
 
         <div id="tableLoading" class="loading">
@@ -498,7 +550,6 @@
                         <th onclick="sortColumn(6)">Emoji</th>
                         <th onclick="sortColumn(7)">Phone</th>
                         <th onclick="sortColumn(8)">Last Message</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody"></tbody>
@@ -544,11 +595,6 @@
                 <canvas id="chartEmoji" height="140"></canvas>
             </div>
 
-            <div class="modal-actions">
-                <button class="btn-send-large" id="modalSendBtn" onclick="sendReminderFromModal()">
-                    📲 Kirim Reminder WhatsApp
-                </button>
-            </div>
         </div>
     </div>
 
@@ -590,12 +636,6 @@
                     <td>${u.score_stroop !== null ? `<span class="score-pill stroop">${u.score_stroop}</span>` : '<span class="score-pill none">—</span>'}</td>
                     <td>${u.score_emoji !== null ? `<span class="score-pill emoji">${u.score_emoji}</span>` : '<span class="score-pill none">—</span>'}</td>
                     <td class="phone-cell">${u.phone_number || '—'}</td>
-                    <td class="time-ago">${u.last_reminder_sent || '—'}</td>
-                    <td>
-                        <button class="btn-send" onclick="sendReminder(${u.id}, '${u.username}', '${u.phone_number || ''}')" ${!u.phone_number ? 'disabled title="No phone number"' : ''}>
-                            📲 Send
-                        </button>
-                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -638,27 +678,7 @@
             renderTable(usersData);
         }
 
-        // ── Send Reminder ───────────────────────────
-        async function sendReminder(userId, username, phone) {
-            if (!phone) {
-                showToast('Nomor telepon tidak tersedia', 'error');
-                return;
-            }
 
-            // Open WhatsApp web with pre-filled message
-            const message = encodeURIComponent(`Halo ${username}, ini pengingat untuk melakukan tes stimulasi kognitif hari ini. Silakan kunjungi aplikasi CogStim untuk menyelesaikan tes Anda. Terima kasih! 🧠`);
-            const waUrl = `https://wa.me/${phone.replace('+', '')}?text=${message}`;
-            window.open(waUrl, '_blank');
-
-            // Record on server
-            try {
-                await fetch(`/admin/api/send_reminder/${userId}`, { method: 'POST' });
-                showToast(`Reminder dikirim ke ${username}`, 'success');
-                loadUsers();
-            } catch (e) {
-                showToast('Gagal mencatat reminder', 'error');
-            }
-        }
 
         // ── User Detail Modal ───────────────────────
         async function showUserDetail(userId) {
@@ -674,10 +694,6 @@
                 document.getElementById('detailLastExec').textContent = data.last_exec || 'Belum pernah';
                 document.getElementById('detailLastReminder').textContent = data.last_reminder_sent || 'Belum pernah';
 
-                // Update send button
-                const btn = document.getElementById('modalSendBtn');
-                btn.onclick = () => sendReminder(data.id, data.username, data.phone_number);
-                btn.disabled = !data.phone_number;
 
                 // Render charts
                 renderChart('chartGoNogo', data.score_history.go_no_go, '#ffb74d');
@@ -733,12 +749,12 @@
         }
 
         // Close modal on overlay click
-        document.getElementById('userModal').addEventListener('click', function(e) {
+        document.getElementById('userModal').addEventListener('click', function (e) {
             if (e.target === this) closeModal();
         });
 
         // Close modal on Escape key
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeModal();
         });
 
