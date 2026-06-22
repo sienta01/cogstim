@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [3.4.0] - 2026-06-22
+
+### Added
+- Latency (reaction time) display in dashboard score table — shown in ms below each test score
+- Dedicated "Grafik Waktu Reaksi" (Reaction Time Chart) on the dashboard with dashed lines per test type
+- Latency display in admin panel user table — shown below each score pill
+- Dual-axis charts in admin user detail modal — score (left axis) and reaction time in ms (right axis, dashed pink line)
+- Axis titles on dashboard score chart ("Skor") and latency chart ("Waktu Reaksi (ms)")
+
+### Changed
+- Admin user detail charts now show legend with both Score and Waktu Reaksi datasets
+- Admin API `/admin/api/users` now returns `latency_go_nogo`, `latency_stroop`, `latency_emoji` fields
+- Dashboard backend groups latency data per test type per date for both table and chart rendering
+
+---
+
 ### [3.3.0] - 2026-06-21
 
 ### Added
@@ -185,7 +201,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Version Compatibility
 
-### Current Version: 3.3.0
+### Current Version: 3.4.0
 - Python 3.7+
 - Flask 2.0+
 - SQLAlchemy compatible

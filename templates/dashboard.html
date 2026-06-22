@@ -207,6 +207,24 @@
             text-decoration: underline;
         }
 
+        .score-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .score-value {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .latency-value {
+            font-size: 0.72rem;
+            color: #888;
+            font-weight: 400;
+        }
+
         @media (max-width: 600px) {
             .dashboard-card {
                 padding: 16px;
@@ -285,26 +303,56 @@
                 {% for row in scores %}
                 <tr>
                     <td><strong>{{ row.date }}</strong></td>
-                    <td>{{ row.go_no_go }}</td>
-                    <td>{{ row.stroop }}</td>
-                    <td>{{ row.emoji }}</td>
+                    <td>
+                        <div class="score-cell">
+                            <span class="score-value">{{ row.go_no_go }}</span>
+                            {% if row.go_no_go_latency != '-' %}
+                            <span class="latency-value">{{ row.go_no_go_latency }} ms</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="score-cell">
+                            <span class="score-value">{{ row.stroop }}</span>
+                            {% if row.stroop_latency != '-' %}
+                            <span class="latency-value">{{ row.stroop_latency }} ms</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="score-cell">
+                            <span class="score-value">{{ row.emoji }}</span>
+                            {% if row.emoji_latency != '-' %}
+                            <span class="latency-value">{{ row.emoji_latency }} ms</span>
+                            {% endif %}
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Chart Section -->
+    <!-- Chart Section: Scores -->
     <div style="margin-top: 30px;">
+        <h4 class="section-title">📈 Grafik Skor</h4>
         <canvas id="scoreChart"></canvas>
     </div>
+
+    <!-- Chart Section: Latency -->
+    <div style="margin-top: 30px;">
+        <h4 class="section-title">⏱️ Grafik Waktu Reaksi</h4>
+        <canvas id="latencyChart"></canvas>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script id="chart-data" type="application/json">{{ chart_data | tojson | safe }}</script>
     <script>
-        const ctx = document.getElementById('scoreChart').getContext('2d');
         const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-        
-        new Chart(ctx, {
+
+        // Score Chart
+        const ctxScore = document.getElementById('scoreChart').getContext('2d');
+        new Chart(ctxScore, {
             type: 'line',
             data: {
                 labels: chartData.labels,
@@ -351,7 +399,79 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        suggestedMax: 100
+                        suggestedMax: 100,
+                        title: {
+                            display: true,
+                            text: 'Skor'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Latency Chart
+        const ctxLatency = document.getElementById('latencyChart').getContext('2d');
+        new Chart(ctxLatency, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [
+                    {
+                        label: 'Kecekatan (Go/No-Go)',
+                        data: chartData.go_no_go_latency,
+                        borderColor: '#e65100',
+                        backgroundColor: 'rgba(230, 81, 0, 0.1)',
+                        tension: 0.3,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        borderWidth: 2,
+                        borderDash: [6, 3]
+                    },
+                    {
+                        label: 'Warna (Stroop)',
+                        data: chartData.stroop_latency,
+                        borderColor: '#283593',
+                        backgroundColor: 'rgba(40, 53, 147, 0.1)',
+                        tension: 0.3,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        borderWidth: 2,
+                        borderDash: [6, 3]
+                    },
+                    {
+                        label: 'Gambar (Emoji)',
+                        data: chartData.emoji_latency,
+                        borderColor: '#2e7d32',
+                        backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                        tension: 0.3,
+                        spanGaps: true,
+                        pointRadius: 4,
+                        borderWidth: 2,
+                        borderDash: [6, 3]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y + ' ms';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Waktu Reaksi (ms)'
+                        }
                     }
                 }
             }

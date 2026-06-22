@@ -1,13 +1,17 @@
 # Technical Documentation - Cognitive Stimulation App
 
+**Version**: 3.4.0 | **Last Updated**: June 22, 2026
+
 ## Architecture Overview
 
 ### Technology Stack
 - **Backend**: Flask (Python web framework)
 - **Database**: SQLite with SQLAlchemy ORM
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **UI Framework**: Materialize CSS
+- **UI Framework**: Materialize CSS (user-facing), Custom dark theme (admin panel)
+- **Charting**: Chart.js 4.x
 - **Security**: Werkzeug (password hashing)
+- **Admin Desktop App**: PyQt6 (optional companion)
 
 ---
 
@@ -17,32 +21,24 @@
 ```python
 class User(db.Model):
     id: Integer (Primary Key)
-    username: String (Unique, Required)
-    password_hash: String (Required)
-    patients: Relationship → Patient (one-to-many)
-```
-
-### Patient Model
-```python
-class Patient(db.Model):
-    id: Integer (Primary Key)
-    name: String (Required)
-    age: Integer (Optional)
-    notes: Text (Optional)
-    user_id: Integer (Foreign Key → User)
+    username: String(50) (Unique, Required)
+    password_hash: String(255) (Required)
+    phone_number: String(20) (Optional)  # e.g. +6281234567890
+    is_admin: Boolean (Default: False)
+    last_reminder_sent: DateTime (Optional)
     scores: Relationship → Score (one-to-many)
 ```
 
 ### Score Model
 ```python
 class Score(db.Model):
-  id: Integer (Primary Key)
-  score: Integer (Required)
-  test_type: String (e.g. 'go_no_go', 'stroop', 'emoji')
-  reaction_time: Float (Optional, milliseconds)
-  accuracy: Float (Optional, percentage)
-  timestamp: DateTime (Auto-set to current time)
-  patient_id: Integer (Foreign Key → Patient)
+    id: Integer (Primary Key)
+    score: Integer (Required)
+    test_type: String(50) (Default: 'emoji')  # 'go_no_go', 'stroop', 'emoji'
+    reaction_time: Float (Optional, average latency in milliseconds)
+    accuracy: Float (Optional, percentage 0-100)
+    timestamp: DateTime (Auto-set to current time)
+    user_id: Integer (Foreign Key → User)
 ```
 
 ---
@@ -52,8 +48,9 @@ class Score(db.Model):
 ### Authentication Routes
 
 #### POST `/register`
-- **Parameters**: username, password
-- **Redirects to**: /login on success
+- **Parameters**: username, password, phone_number (optional)
+- **Action**: Creates user, normalizes phone to +62 prefix, auto-signs in
+- **Redirects to**: /dashboard on success
 - **Flash message**: "Username sudah digunakan" if duplicate
 
 #### POST `/login`
@@ -65,93 +62,101 @@ class Score(db.Model):
 - **Action**: Clears session
 - **Redirects to**: /login
 
-### Patient Management Routes
-
-#### POST `/add_patient`
-- **Parameters**: name, age, notes
-- **Requires**: user_id in session
-- **Action**: Creates new patient linked to current user
-- **Redirects to**: /dashboard
-
-#### GET `/edit_patient/<patient_id>`
-- **Requires**: user_id in session, patient owned by user
-- **Returns**: edit_patient.html template
-
-#### POST `/edit_patient/<patient_id>`
-- **Parameters**: name, age, notes
-- **Action**: Updates patient record
-- **Redirects to**: /dashboard
-
-#### GET `/delete_patient/<patient_id>`
-- **Requires**: user_id in session, patient owned by user
-- **Action**: Deletes patient and associated scores
-- **Redirects to**: /dashboard
-
-#### GET `/select_patient/<patient_id>`
-- **Action**: Sets patient in session, redirects to test selection
-- **Session vars**: selected_patient_id, selected_patient_name
-
 ### Test Routes
 
 #### GET `/select_test`
 - **Requires**: user_id in session
-- **Action**: Initializes test sequence (clears `completed_tests` and `test_scores`) and redirects to the first instruction page by default. In current flow this redirects to `/test_instructions/go_no_go` rather than rendering a selection template.
+- **Action**: Initializes test sequence (clears `completed_tests` and `test_scores`) and redirects to `/test_instructions/go_no_go`
+
+#### GET `/test_instructions/<test_type>`
+- **Parameters**: test_type ('go_no_go', 'stroop', or 'emoji')
+- **Returns**: test_instructions.html with instructions for the specified test
+
+#### GET `/practice/<test_type>`
+- **Action**: Initializes a practice session (3 trials) for the given test type
+- **Returns**: game.html in practice mode
+
+#### GET `/ready/<test_type>`
+- **Action**: Shows a ready/confirmation page after practice
+- **Returns**: ready.html
 
 #### GET `/game/<test_type>`
 - **Parameters**: test_type ('go_no_go', 'stroop', or 'emoji')
-- **Requires**: user_id, selected_patient_id in session
-- **Action**: Initializes test by generating trials (or practice trials) and sets session state
-- **Session vars set**:
-  - test_type
-  - score (0)
-  - correct_count (0)
-  - total_count (0)
-  - trial_index (0)
-  - total_trials (int) — number of trials for this run (practice/main)
-  - go_no_go_trials OR stroop_trials OR emoji_trials (array)
-  - practice_mode (bool) — true for practice runs
-  - completed_tests (list) — tests already finished in this session
+- **Requires**: user_id in session
+- **Action**: Initializes actual test (10 trials) and sets session state
+- **Session vars set**: test_type, score, correct_count, total_count, trial_index, total_reaction_time, is_practice
 
 #### GET `/next`
-- **Returns**: JSON with next trial data
+- **Returns**: JSON with next trial data or finish summary
 - **Response formats**:
-  - **Go/No-Go**: `{ "shape": str, "is_go_trial": bool, "finished": bool }`
+  - **Go/No-Go**: `{ "shape": str, "is_go": bool, "finished": bool }`
   - **Stroop**: `{ "word": str, "display_color": hex, "correct_answer": str, "finished": bool }`
-  - **Emoji**: `{ "emoji": str, "description": str, "is_match": bool, "finished": bool }`
+  - **Emoji**: `{ "emoji": str, "description": str, "finished": bool }`
+  - **Finished**: `{ "finished": true, "score": int, "correct": int, "total": int, "avg_latency": int }`
 
 #### POST `/submit`
-- **Body**: JSON with user response
-- **Go/No-Go**: `{ "action": "go" | "no_go" }`
-- **Stroop**: `{ "answer": "red" | "blue" | "green" | "yellow" | "purple" }`
-- **Emoji**: `{ "choice": true | false }` (whether description matches emoji)
-- **Returns**: 
+- **Body**: JSON with user response + latency
+  - **Go/No-Go**: `{ "action": "go" | "nogo" | "nogo_timeout", "latency": int }`
+  - **Stroop**: `{ "answer": "red" | ... | "timeout", "latency": int }`
+  - **Emoji**: `{ "user_choice": bool, "latency": int }`
+- **Returns**:
   - During test: `{ "message": str, "is_correct": bool }`
-  - On completion: `{ "finished": true, "score": int, "correct": int, "total": int, "next_test": str }`
-- **Side effects**: Saves Score to database when a test completes. Flow control may redirect client to `/test_instructions/<next_test>` depending on sequence.
+  - Test finished with next test: `{ "finished": true, "next_test": str, "redirect_url": str }`
+  - All tests finished: `{ "finished": true, "final_results": true, "all_scores": {...} }`
+- **Side effects**: Saves Score (with accuracy and avg reaction_time) to database on test completion
 
-### Score/History Routes
+#### GET `/test_results`
+- **Returns**: test_results.html — final results page showing all three test scores with latency
 
-#### GET `/scores`
-- **Returns**: scores.html with paginated scores
-- **Shows**: Last 100 scores for user's patients
+### Dashboard Route
 
-#### GET `/view_patient_scores/<patient_id>`
-- **Returns**: scores.html filtered to specific patient
-- **Shows**: All scores for that patient in descending timestamp order
+#### GET `/dashboard`
+- **Requires**: user_id in session
+- **Returns**: dashboard.html
+- **Context**:
+  - `scores`: List of dicts per date with keys: `date`, `go_no_go`, `stroop`, `emoji`, `go_no_go_latency`, `stroop_latency`, `emoji_latency`
+  - `chart_data`: Object with `labels`, score arrays (`go_no_go`, `stroop`, `emoji`), and latency arrays (`go_no_go_latency`, `stroop_latency`, `emoji_latency`)
+  - `now`, `username`, `is_admin`
 
 ### Navigation Routes
 
 #### GET `/`
 - **Redirects to**: /dashboard
 
-#### GET `/dashboard`
-- **Requires**: user_id in session
-- **Returns**: dashboard.html with patient list
-- **Context**: patients list, current time, username
-
 #### GET `/reference`
 - **Returns**: reference.html
-- **Purpose**: Legacy route (kept for compatibility)
+
+### Admin Routes (Web)
+
+#### GET `/admin`
+- **Requires**: admin session
+- **Returns**: admin.html — full admin panel with user table and detail modals
+
+#### GET `/admin/api/users`
+- **Auth**: Admin session or `X-API-Key` header
+- **Returns**: JSON array of user objects with fields:
+  - `id`, `username`, `phone_number`, `last_exec`, `off_time`
+  - `score_go_nogo`, `score_stroop`, `score_emoji` (latest scores)
+  - `latency_go_nogo`, `latency_stroop`, `latency_emoji` (latest reaction times in ms)
+  - `last_reminder_sent`
+
+#### GET `/admin/api/user/<user_id>`
+- **Auth**: Admin session or API key
+- **Returns**: Detailed user data with `score_history` per test type containing `labels`, `scores`, `accuracy`, `reaction_time` arrays
+
+#### POST `/admin/api/users/create`
+- **Body**: `{ "username": str, "password": str, "phone_number": str }`
+- **Returns**: `{ "success": true, "id": int }`
+
+#### PUT `/admin/api/users/<user_id>/edit`
+- **Body**: `{ "username": str, "password": str, "phone_number": str }` (all optional)
+- **Returns**: `{ "success": true }`
+
+#### POST `/admin/api/send_reminder/<user_id>`
+- **Action**: Records reminder timestamp for user
+
+#### GET `/admin/api/check_pending`
+- **Returns**: Users who haven't done any test today (for auto-reminders)
 
 ---
 
@@ -195,19 +200,19 @@ def generate_emoji_trials(num_trials):
 | Variable | Type | Purpose |
 |----------|------|---------|
 | user_id | int | Current logged-in user |
-| selected_patient_id | int | Patient for score recording |
-| selected_patient_name | str | Patient display name |
+| is_admin | bool | Whether user has admin privileges |
 | test_type | str | 'go_no_go', 'stroop', or 'emoji' |
 | score | int | Current accumulated score |
 | correct_count | int | Number of correct responses |
 | total_count | int | Total trials attempted |
-| trial_index | int | Current trial number (0-19) |
-| go_no_go_trials | list | Array of GO/NO-GO trials |
-| stroop_trials | list | Array of Stroop trials |
-| emoji_trials | list | Array of Emoji trials |
-| practice_mode | bool | Whether this run is a practice session |
-| total_trials | int | Number of trials in current run |
-| stroop_trials | list | Array of Stroop trials |
+| trial_index | int | Current trial number (0-indexed) |
+| total_reaction_time | float | Sum of all reaction times (ms) |
+| is_practice | bool | Whether this run is a practice session |
+| go_no_go_trials | list | Array of GO/NO-GO trial objects |
+| stroop_trials | list | Array of Stroop trial objects |
+| emoji_trials | list | Array of Emoji trial objects |
+| completed_tests | list | Tests finished in current sequence |
+| test_scores | dict | Accumulated scores per test type |
 
 ---
 
@@ -215,51 +220,80 @@ def generate_emoji_trials(num_trials):
 
 ### Go/No-Go Scoring
 - **Points per trial**: 10 points
-- **Correct response**: Matches trial type (GO action for GO shapes, NO action for NO-GO)
-- **Maximum score**: 200 (20 trials × 10 points)
+- **Correct response**: GO action for "JALAN" stimulus, NO action for "DIAM" stimulus
+- **Maximum score**: 100 (10 trials × 10 points)
 
 ### Stroop Scoring
 - **Points per trial**: 10 points
 - **Correct response**: Color button matches display color (not word meaning)
-- **Maximum score**: 200 (20 trials × 10 points)
+- **Maximum score**: 100 (10 trials × 10 points)
+
+### Emoji Matching Scoring
+- **Points per trial**: 10 points
+- **Correct response**: Correctly identifies whether emoji matches description
+- **Maximum score**: 100 (10 trials × 10 points)
 
 ### Accuracy Calculation
 ```
 accuracy = (correct_count / total_count) * 100
 ```
-- Stored in Score.accuracy field
+- Stored in `Score.accuracy` field
 - Displayed as percentage on results screen
+
+### Latency (Reaction Time) Tracking
+```
+avg_latency = total_reaction_time / total_count
+```
+- Each trial's response time (ms) is sent via the `latency` field in `/submit`
+- Accumulated in `session['total_reaction_time']` across all trials
+- Average stored in `Score.reaction_time` field (ms)
+- Displayed in:
+  - Dashboard score table (below each score)
+  - Dashboard latency chart ("Grafik Waktu Reaksi")
+  - Admin panel user table (below each score pill)
+  - Admin user detail modal (dual-axis chart with score + latency)
+  - Test results page (per-test summary)
 
 ---
 
 ## Frontend Components
 
-### select_test.html
-- **Purpose**: Test type selection
+### dashboard.html
+- **Purpose**: Main user dashboard
 - **Elements**:
-  - Test description cards
-  - Links to start each test
-  - Back button to dashboard
-- **Styling**: Gradient background, card-based layout
+  - Greeting with time-of-day awareness
+  - "Mulai Latihan" button to start test sequence
+  - Admin panel link (admin users only)
+  - Score history table with latency sub-text per cell
+  - Score trend chart (Chart.js line chart)
+  - Latency trend chart ("Grafik Waktu Reaksi", dashed lines)
+
+### test_instructions.html
+- **Purpose**: Pre-test instructions page per test type
+- **Elements**: Instructions, practice button, start button
 
 ### game.html
-- **Purpose**: Unified test interface
+- **Purpose**: Unified test interface for all three test types
 - **Conditional rendering**:
-  - Go/No-Go mode: Shape display + button
-  - Stroop mode: Word display + 5 color buttons
+  - Go/No-Go mode: "JALAN"/"DIAM" button display
+  - Stroop mode: Colored word + 5 color buttons
+  - Emoji mode: Emoji + description + match/no-match buttons
 - **Dynamic elements**:
   - Progress bar (updates with trial_index)
-  - Result message (updates after submission)
-  - Final results screen (on completion)
-- **Styling**: Materialize CSS, animations, responsive
+  - Result feedback (✅/❌) after each submission
+  - Auto-advance to next test on completion
 
-### scores.html
-- **Purpose**: Score history display
-- **Features**:
-  - Sortable columns (click header to sort)
-  - Test type indicators (emojis)
-  - Accuracy percentage display
-  - Formatted timestamps
+### test_results.html
+- **Purpose**: Final results page after all three tests
+- **Elements**: Score, accuracy, and average latency per test type
+
+### admin.html
+- **Purpose**: Admin panel with dark theme
+- **Elements**:
+  - Stats row (total users, active today, inactive, no phone)
+  - Searchable/sortable user table with scores + latency
+  - User detail modal with dual-axis charts (score + reaction time)
+  - Toast notifications
 
 ---
 
@@ -362,10 +396,13 @@ else:
 
 ### Adding Features
 - **Difficulty levels**: Add difficulty parameter to trial generation
-- **Reaction time**: Add timestamp to frontend, calculate in submit
 - **Performance tracking**: Query scores by date range
 - **Data export**: Add CSV/PDF export functionality
-- **Statistics**: Add dashboard with performance graphs
+
+### Implemented Features (v3.4.0)
+- ✅ **Reaction time tracking**: Latency captured per trial, averaged per test
+- ✅ **Performance graphs**: Score and latency trend charts on dashboard
+- ✅ **Admin analytics**: Dual-axis charts in admin detail modal (score + latency)
 
 ---
 
@@ -388,21 +425,27 @@ else:
 
 ```
 cogstim/
-├── app.py                 # Main application file
-├── models.py              # Empty (could move models here)
-├── game.py                # Empty (could add game logic)
-├── auth.py                # Empty (could move auth here)
+├── app.py                 # Main application (routes, models, logic)
+├── VERSION                # Semantic version file
+├── CHANGELOG.md           # Release history
+├── TECHNICAL_DOCS.md      # This file
+├── USER_GUIDE.md          # End-user guide
+├── README.md              # Project overview
 ├── requirements.txt       # Python dependencies
 ├── database.db            # SQLite database (generated)
+├── static/
+│   └── emoji_names.js     # Single source of truth for emoji data
 ├── templates/
 │   ├── login.html
 │   ├── register.html
-│   ├── dashboard.html
-│   ├── edit_patient.html
-│   ├── select_test.html   # NEW
-│   ├── game.html          # UPDATED
-│   ├── scores.html        # UPDATED
+│   ├── dashboard.html     # Score table + score/latency charts
+│   ├── test_instructions.html
+│   ├── ready.html
+│   ├── game.html          # Unified test interface
+│   ├── test_results.html  # Final results with latency
+│   ├── admin.html         # Admin panel (dark theme)
 │   └── reference.html
+├── admin_app/             # Desktop admin companion (PyQt6)
 └── __pycache__/
 ```
 
@@ -425,7 +468,14 @@ cogstim/
 ### Manual Testing Checklist
 - [ ] Go/No-Go test with correct and incorrect responses
 - [ ] Stroop test with color matching
+- [ ] Emoji matching test with correct/incorrect pairings
 - [ ] Score accuracy calculation
-- [ ] Multi-patient score separation
+- [ ] Latency (reaction time) recording and display
+- [ ] Dashboard score table shows latency below scores
+- [ ] Dashboard latency chart renders correctly
+- [ ] Admin table shows latency below score pills
+- [ ] Admin detail modal shows dual-axis charts (score + latency)
+- [ ] Practice mode (3 trials) followed by actual test (10 trials)
+- [ ] Test sequence flow: Go/No-Go → Stroop → Emoji → Results
 - [ ] Session timeout behavior
 - [ ] Mobile responsiveness

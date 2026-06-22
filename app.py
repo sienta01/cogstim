@@ -1,7 +1,7 @@
 """
 Cognitive Stimulation Application
-Version: 3.3.0
-Release Date: June 21, 2026
+Version: 3.4.0
+Release Date: June 22, 2026
 Author: Timothy Subroto
 Description: Professional cognitive assessment platform with Go/No-Go, Color Stroop, and Emoji Matching tests
 """
@@ -114,11 +114,15 @@ def dashboard():
     raw_scores = Score.query.filter_by(user_id=user.id).order_by(Score.timestamp.asc()).all() if user else []
     
     from collections import defaultdict
-    grouped_by_date = defaultdict(lambda: {'go_no_go': '-', 'stroop': '-', 'emoji': '-'})
+    grouped_by_date = defaultdict(lambda: {
+        'go_no_go': '-', 'stroop': '-', 'emoji': '-',
+        'go_no_go_latency': '-', 'stroop_latency': '-', 'emoji_latency': '-'
+    })
     for s in raw_scores:
         if s.timestamp:
             date_obj = s.timestamp.date()
             grouped_by_date[date_obj][s.test_type] = s.score
+            grouped_by_date[date_obj][s.test_type + '_latency'] = round(s.reaction_time) if s.reaction_time else '-'
 
     # Sort descending for table
     table_data = []
@@ -127,7 +131,10 @@ def dashboard():
             'date': d.strftime('%d/%m/%Y'),
             'go_no_go': grouped_by_date[d]['go_no_go'],
             'stroop': grouped_by_date[d]['stroop'],
-            'emoji': grouped_by_date[d]['emoji']
+            'emoji': grouped_by_date[d]['emoji'],
+            'go_no_go_latency': grouped_by_date[d]['go_no_go_latency'],
+            'stroop_latency': grouped_by_date[d]['stroop_latency'],
+            'emoji_latency': grouped_by_date[d]['emoji_latency']
         })
         
     # Chart data (ascending order)
@@ -135,18 +142,27 @@ def dashboard():
     chart_go_no_go = []
     chart_stroop = []
     chart_emoji = []
+    chart_go_no_go_latency = []
+    chart_stroop_latency = []
+    chart_emoji_latency = []
     
     for d in sorted(grouped_by_date.keys()):
         chart_labels.append(d.strftime('%d/%m/%Y'))
         chart_go_no_go.append(grouped_by_date[d]['go_no_go'] if grouped_by_date[d]['go_no_go'] != '-' else None)
         chart_stroop.append(grouped_by_date[d]['stroop'] if grouped_by_date[d]['stroop'] != '-' else None)
         chart_emoji.append(grouped_by_date[d]['emoji'] if grouped_by_date[d]['emoji'] != '-' else None)
+        chart_go_no_go_latency.append(grouped_by_date[d]['go_no_go_latency'] if grouped_by_date[d]['go_no_go_latency'] != '-' else None)
+        chart_stroop_latency.append(grouped_by_date[d]['stroop_latency'] if grouped_by_date[d]['stroop_latency'] != '-' else None)
+        chart_emoji_latency.append(grouped_by_date[d]['emoji_latency'] if grouped_by_date[d]['emoji_latency'] != '-' else None)
         
     chart_data = {
         'labels': chart_labels,
         'go_no_go': chart_go_no_go,
         'stroop': chart_stroop,
-        'emoji': chart_emoji
+        'emoji': chart_emoji,
+        'go_no_go_latency': chart_go_no_go_latency,
+        'stroop_latency': chart_stroop_latency,
+        'emoji_latency': chart_emoji_latency
     }
 
     return render_template("dashboard.html", scores=table_data, chart_data=chart_data, now=now, username=username, is_admin=is_admin)
@@ -633,9 +649,11 @@ def admin_api_users():
     for u in users:
         # Latest scores per test type
         latest_scores = {}
+        latest_latencies = {}
         for tt in ['go_no_go', 'stroop', 'emoji']:
             s = Score.query.filter_by(user_id=u.id, test_type=tt).order_by(Score.timestamp.desc()).first()
             latest_scores[tt] = s.score if s else None
+            latest_latencies[tt] = round(s.reaction_time) if s and s.reaction_time else None
 
         # Last execution = most recent score timestamp
         last_score = Score.query.filter_by(user_id=u.id).order_by(Score.timestamp.desc()).first()
@@ -657,6 +675,9 @@ def admin_api_users():
             'score_go_nogo': latest_scores['go_no_go'],
             'score_stroop': latest_scores['stroop'],
             'score_emoji': latest_scores['emoji'],
+            'latency_go_nogo': latest_latencies['go_no_go'],
+            'latency_stroop': latest_latencies['stroop'],
+            'latency_emoji': latest_latencies['emoji'],
             'last_reminder_sent': u.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if u.last_reminder_sent else None
         })
     return jsonify(result)

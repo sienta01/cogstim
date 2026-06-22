@@ -250,6 +250,19 @@
             color: #555a70;
         }
 
+        .score-with-latency {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .latency-sub {
+            font-size: 0.68rem;
+            color: #666b80;
+            font-weight: 400;
+        }
+
 
 
         .time-ago {
@@ -632,9 +645,9 @@
                     <td><a class="username-link" onclick="showUserDetail(${u.id})">${u.username}</a></td>
                     <td class="time-ago">${u.last_exec || '—'}</td>
                     <td class="time-ago">${u.off_time}</td>
-                    <td>${u.score_go_nogo !== null ? `<span class="score-pill go-nogo">${u.score_go_nogo}</span>` : '<span class="score-pill none">—</span>'}</td>
-                    <td>${u.score_stroop !== null ? `<span class="score-pill stroop">${u.score_stroop}</span>` : '<span class="score-pill none">—</span>'}</td>
-                    <td>${u.score_emoji !== null ? `<span class="score-pill emoji">${u.score_emoji}</span>` : '<span class="score-pill none">—</span>'}</td>
+                    <td>${u.score_go_nogo !== null ? `<div class="score-with-latency"><span class="score-pill go-nogo">${u.score_go_nogo}</span>${u.latency_go_nogo !== null ? `<span class="latency-sub">${u.latency_go_nogo} ms</span>` : ''}</div>` : '<span class="score-pill none">—</span>'}</td>
+                    <td>${u.score_stroop !== null ? `<div class="score-with-latency"><span class="score-pill stroop">${u.score_stroop}</span>${u.latency_stroop !== null ? `<span class="latency-sub">${u.latency_stroop} ms</span>` : ''}</div>` : '<span class="score-pill none">—</span>'}</td>
+                    <td>${u.score_emoji !== null ? `<div class="score-with-latency"><span class="score-pill emoji">${u.score_emoji}</span>${u.latency_emoji !== null ? `<span class="latency-sub">${u.latency_emoji} ms</span>` : ''}</div>` : '<span class="score-pill none">—</span>'}</td>
                     <td class="phone-cell">${u.phone_number || '—'}</td>
                 `;
                 tbody.appendChild(tr);
@@ -712,22 +725,50 @@
                 type: 'line',
                 data: {
                     labels: history.labels,
-                    datasets: [{
-                        label: 'Score',
-                        data: history.scores,
-                        borderColor: color,
-                        backgroundColor: color + '20',
-                        borderWidth: 2.5,
-                        pointRadius: 4,
-                        pointBackgroundColor: color,
-                        tension: 0.3,
-                        fill: true
-                    }]
+                    datasets: [
+                        {
+                            label: 'Score',
+                            data: history.scores,
+                            borderColor: color,
+                            backgroundColor: color + '20',
+                            borderWidth: 2.5,
+                            pointRadius: 4,
+                            pointBackgroundColor: color,
+                            tension: 0.3,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Waktu Reaksi (ms)',
+                            data: history.reaction_time,
+                            borderColor: '#ff6b9d',
+                            backgroundColor: 'rgba(255, 107, 157, 0.08)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#ff6b9d',
+                            tension: 0.3,
+                            fill: false,
+                            borderDash: [6, 3],
+                            yAxisID: 'y1'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
                     plugins: {
-                        legend: { display: false }
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: '#8892b0',
+                                font: { size: 11 },
+                                usePointStyle: true,
+                                pointStyle: 'line'
+                            }
+                        }
                     },
                     scales: {
                         x: {
@@ -735,8 +776,31 @@
                             grid: { color: 'rgba(255,255,255,0.04)' }
                         },
                         y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Score',
+                                color: '#8892b0',
+                                font: { size: 11 }
+                            },
                             ticks: { color: '#555a70', font: { size: 10 } },
                             grid: { color: 'rgba(255,255,255,0.04)' },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Latency (ms)',
+                                color: '#ff6b9d',
+                                font: { size: 11 }
+                            },
+                            ticks: { color: '#ff6b9d', font: { size: 10 } },
+                            grid: { drawOnChartArea: false },
                             beginAtZero: true
                         }
                     }
