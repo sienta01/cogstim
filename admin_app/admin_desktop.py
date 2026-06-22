@@ -1,7 +1,7 @@
 """
 CogStim Desktop Admin App
 - System tray support (minimize to taskbar)
-- Auto-send WhatsApp reminders at 1:00 PM daily (via Selenium automation)
+- Auto-send WhatsApp reminders at a customizable time daily (via Selenium automation)
 - User management table with detail view
 """
 
@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QPushButton, QLabel, QHeaderView,
     QSystemTrayIcon, QMenu, QDialog, QScrollArea, QFrame, QMessageBox,
     QSplitter, QStatusBar, QLineEdit, QGroupBox, QGridLayout, QCheckBox,
-    QProgressDialog, QTextEdit
+    QProgressDialog, QTextEdit, QSpinBox
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, QThread, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon, QFont, QColor, QAction, QPainter, QPixmap
@@ -52,6 +52,12 @@ CHROME_PROFILE = CONFIG.get(
     'chrome_profile_path',
     os.path.join(BASE_DIR, 'chrome-whatsapp-profile')
 )
+
+def save_config(cfg):
+    """Persist the current configuration back to config.json."""
+    config_path = os.path.join(BASE_DIR, 'config.json')
+    with open(config_path, 'w') as f:
+        json.dump(cfg, f, indent=4)
 
 HEADERS = {'X-API-Key': API_KEY}
 
@@ -581,10 +587,44 @@ class AdminWindow(QMainWindow):
         self.wa_disconnect_btn.setVisible(False)
         header_layout.addWidget(self.wa_disconnect_btn)
 
-        self.auto_check = QCheckBox("Auto-send @1PM")
+        self.auto_check = QCheckBox("Auto-send")
         self.auto_check.setChecked(AUTO_SEND)
         self.auto_check.setStyleSheet(f"font-size: 12px; font-weight: 600;")
+        self.auto_check.toggled.connect(self._on_reminder_settings_changed)
         header_layout.addWidget(self.auto_check)
+
+        at_label = QLabel("at")
+        at_label.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 12px; font-weight: 600;")
+        header_layout.addWidget(at_label)
+
+        self.hour_spin = QSpinBox()
+        self.hour_spin.setRange(0, 23)
+        self.hour_spin.setValue(REMINDER_HOUR)
+        self.hour_spin.setFixedWidth(52)
+        self.hour_spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hour_spin.setStyleSheet(f"""
+            QSpinBox {{
+                background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.1);
+                border-radius: 6px; padding: 4px; color: {TEXT_PRIMARY}; font-size: 12px; font-weight: 700;
+            }}
+            QSpinBox:focus {{ border-color: {ACCENT}; }}
+            QSpinBox::up-button, QSpinBox::down-button {{ width: 14px; }}
+        """)
+        self.hour_spin.valueChanged.connect(self._on_reminder_settings_changed)
+        header_layout.addWidget(self.hour_spin)
+
+        colon_label = QLabel(":")
+        colon_label.setStyleSheet(f"color: {TEXT_PRIMARY}; font-size: 14px; font-weight: 700;")
+        header_layout.addWidget(colon_label)
+
+        self.minute_spin = QSpinBox()
+        self.minute_spin.setRange(0, 59)
+        self.minute_spin.setValue(REMINDER_MINUTE)
+        self.minute_spin.setFixedWidth(52)
+        self.minute_spin.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.minute_spin.setStyleSheet(self.hour_spin.styleSheet())
+        self.minute_spin.valueChanged.connect(self._on_reminder_settings_changed)
+        header_layout.addWidget(self.minute_spin)
 
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.setObjectName("primaryBtn")
@@ -771,7 +811,9 @@ class AdminWindow(QMainWindow):
 
     def check_reminder_time(self):
         now = datetime.now()
-        if (now.hour == REMINDER_HOUR and now.minute == REMINDER_MINUTE
+        target_hour = self.hour_spin.value()
+        target_minute = self.minute_spin.value()
+        if (now.hour == target_hour and now.minute == target_minute
                 and not self.reminder_sent_today and self.auto_check.isChecked()):
             self.reminder_sent_today = True
             self.auto_send_reminders()
@@ -780,6 +822,16 @@ class AdminWindow(QMainWindow):
         now = datetime.now()
         if now.hour == 0 and now.minute == 0:
             self.reminder_sent_today = False
+
+    def _on_reminder_settings_changed(self):
+        """Persist reminder settings to config.json when user changes them."""
+        CONFIG['auto_send_enabled'] = self.auto_check.isChecked()
+        CONFIG['reminder_hour'] = self.hour_spin.value()
+        CONFIG['reminder_minute'] = self.minute_spin.value()
+        save_config(CONFIG)
+        time_str = f"{self.hour_spin.value():02d}:{self.minute_spin.value():02d}"
+        state = "enabled" if self.auto_check.isChecked() else "disabled"
+        self.statusBar().showMessage(f"⏰ Auto-reminder {state} at {time_str}")
 
     def auto_send_reminders(self):
         """Fetch pending users and send WhatsApp reminders automatically."""
