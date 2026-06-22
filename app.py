@@ -644,6 +644,7 @@ def admin_api_users():
     if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
         return jsonify({"error": "Unauthorized"}), 401
 
+    today = datetime.datetime.utcnow().date()
     users = User.query.filter_by(is_admin=False).all()
     result = []
     for u in users:
@@ -658,6 +659,11 @@ def admin_api_users():
         # Last execution = most recent score timestamp
         last_score = Score.query.filter_by(user_id=u.id).order_by(Score.timestamp.desc()).first()
         last_exec = last_score.timestamp.strftime('%Y-%m-%d %H:%M') if last_score and last_score.timestamp else None
+
+        # Did the user complete at least one test today?
+        today_done = False
+        if last_score and last_score.timestamp:
+            today_done = last_score.timestamp.date() == today
 
         # Off time = days since last execution
         if last_score and last_score.timestamp:
@@ -678,6 +684,7 @@ def admin_api_users():
             'latency_go_nogo': latest_latencies['go_no_go'],
             'latency_stroop': latest_latencies['stroop'],
             'latency_emoji': latest_latencies['emoji'],
+            'today_done': today_done,
             'last_reminder_sent': u.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if u.last_reminder_sent else None
         })
     return jsonify(result)
@@ -839,6 +846,33 @@ def admin_api_delete_user(user_id):
     db.session.delete(user)
     db.session.commit()
     return jsonify({"success": True, "message": f"User '{username}' deleted"})
+
+
+@app.route("/admin/api/scores/export")
+def admin_api_scores_export():
+    """Return all scores for all users in a flat list for CSV export."""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    users = User.query.filter_by(is_admin=False).all()
+    user_map = {u.id: u for u in users}
+    scores = Score.query.filter(Score.user_id.in_([u.id for u in users])).order_by(Score.timestamp.asc()).all()
+
+    result = []
+    for s in scores:
+        u = user_map.get(s.user_id)
+        result.append({
+            'username': u.username if u else '',
+            'phone_number': u.phone_number or '' if u else '',
+            'test_type': s.test_type,
+            'score': s.score,
+            'accuracy': round(s.accuracy, 1) if s.accuracy else None,
+            'reaction_time': round(s.reaction_time) if s.reaction_time else None,
+            'timestamp': s.timestamp.strftime('%Y-%m-%d %H:%M:%S') if s.timestamp else '',
+        })
+    return jsonify(result)
 
 
 with app.app_context():

@@ -8,6 +8,7 @@ CogStim Desktop Admin App
 import sys
 import os
 import json
+import csv
 import logging
 import requests
 from datetime import datetime, timedelta
@@ -19,7 +20,7 @@ from PyQt6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QPushButton, QLabel, QHeaderView,
     QSystemTrayIcon, QMenu, QDialog, QScrollArea, QFrame, QMessageBox,
     QSplitter, QStatusBar, QLineEdit, QGroupBox, QGridLayout, QCheckBox,
-    QProgressDialog, QTextEdit, QSpinBox
+    QProgressDialog, QTextEdit, QSpinBox, QFileDialog
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, QThread, pyqtSignal, QObject
 from PyQt6.QtGui import QIcon, QFont, QColor, QAction, QPainter, QPixmap
@@ -84,8 +85,8 @@ STYLESHEET = f"""
         border-radius: 8px; padding: 8px 18px; font-weight: 600; font-size: 12px;
     }}
     QPushButton:hover {{ background: {BG_HOVER}; border-color: {ACCENT}; }}
-    QPushButton#sendBtn {{ background: {GREEN}; color: white; border: none; }}
-    QPushButton#sendBtn:hover {{ background: #128C7E; }}
+    QPushButton#sendBtn {{ background: #1a8a4a; color: white; border: none; }}
+    QPushButton#sendBtn:hover {{ background: #14693a; }}
     QPushButton#primaryBtn {{ background: {ACCENT}; color: white; border: none; }}
     QPushButton#primaryBtn:hover {{ background: #5a6fd6; }}
     QTableWidget {{
@@ -213,7 +214,7 @@ class WaSendWorker(QThread):
 
 class WaBatchWorker(QThread):
     """Send WhatsApp messages to a list of users sequentially."""
-    progress = pyqtSignal(int, int, str, bool)  # current, total, info, success
+    progress = pyqtSignal(int, int, str, bool, int)  # current, total, info, success, user_id
     done = pyqtSignal(int, int)  # sent, failed
 
     def __init__(self, users, message_template):
@@ -233,19 +234,20 @@ class WaBatchWorker(QThread):
             if self._cancel:
                 break
             phone = user.get('phone_number', '')
+            uid = user.get('id', 0)
             if not phone:
                 failed += 1
-                self.progress.emit(i + 1, total, f"{user['username']}: no phone", False)
+                self.progress.emit(i + 1, total, f"{user['username']}: no phone", False, uid)
                 continue
             msg = self.message_template.replace('{username}', user['username'])
             result = wa_sender.send_message(phone, msg)
             if result['success']:
                 sent += 1
-                self.progress.emit(i + 1, total, f"✅ {user['username']}", True)
+                self.progress.emit(i + 1, total, f"✅ {user['username']}", True, uid)
                 # Record on server
                 try:
                     requests.post(
-                        f"{SERVER_URL}/admin/api/send_reminder/{user['id']}",
+                        f"{SERVER_URL}/admin/api/send_reminder/{uid}",
                         headers=HEADERS, timeout=10)
                 except Exception:
                     pass
@@ -253,7 +255,7 @@ class WaBatchWorker(QThread):
                 failed += 1
                 self.progress.emit(
                     i + 1, total,
-                    f"❌ {user['username']}: {result['error']}", False)
+                    f"❌ {user['username']}: {result['error']}", False, uid)
         self.done.emit(sent, failed)
 
 
@@ -267,6 +269,9 @@ class ScoreChart(FigureCanvas):
         self.color = color
         self.title = title
         self._style_ax()
+        self._annotation = None
+        self._plot_data = None  # (x_vals, y_vals, labels, y_suffix)
+        self.mpl_connect('motion_notify_event', self._on_hover)
 
     def _style_ax(self):
         self.ax.set_facecolor('#1a1d2e')
@@ -277,18 +282,89 @@ class ScoreChart(FigureCanvas):
         self.ax.spines['right'].set_visible(False)
         self.ax.set_title(self.title, color='#b0b8d1', fontsize=10, fontweight='bold', pad=8)
 
-    def update_data(self, labels, scores):
+    def wheelEvent(self, event):
+        """Pass wheel events to parent scroll area instead of consuming them."""
+        event.ignore()
+
+    def _on_hover(self, event):
+        """Show annotation on nearest data point when hovering."""
+        if not self._plot_data or event.inaxes != self.ax:
+            if self._annotation and self._annotation.get_visible():
+                self._annotation.set_visible(False)
+                self.draw_idle()
+            return
+
+        x_vals, y_vals, labels, y_suffix = self._plot_data
+        if not x_vals:
+            return
+
+        # Find nearest point
+        min_dist = float('inf')
+        nearest_idx = 0
+        for i, (xv, yv) in enumerate(zip(x_vals, y_vals)):
+            dist = abs(event.xdata - xv)
+            if dist < min_dist:
+                min_dist = dist
+                nearest_idx = i
+
+        # Only show if reasonably close
+        x_range = max(x_vals) - min(x_vals) if len(x_vals) > 1 else 1
+        if min_dist > x_range * 0.15:
+            if self._annotation and self._annotation.get_visible():
+                self._annotation.set_visible(False)
+                self.draw_idle()
+            return
+
+        xp, yp = x_vals[nearest_idx], y_vals[nearest_idx]
+        lbl = labels[nearest_idx] if nearest_idx < len(labels) else ''
+        val_text = f"{int(yp)}{y_suffix}" if yp == int(yp) else f"{yp:.1f}{y_suffix}"
+        text = f"{lbl}\n{val_text}"
+
+        # Position tooltip below or above depending on proximity to top
+        y_min, y_max = self.ax.get_ylim()
+        near_top = (yp - y_min) / (y_max - y_min) > 0.7 if y_max != y_min else False
+        offset = (10, -30) if near_top else (10, 14)
+
+        if self._annotation is None:
+            self._annotation = self.ax.annotate(
+                text, xy=(xp, yp), xytext=offset,
+                textcoords='offset points',
+                fontsize=8, color='white', clip_on=False,
+                bbox=dict(boxstyle='round,pad=0.4', fc='#333850', ec=self.color, alpha=0.95),
+                arrowprops=dict(arrowstyle='->', color=self.color, lw=1.2))
+        else:
+            self._annotation.xy = (xp, yp)
+            self._annotation.set_text(text)
+            self._annotation.xyann = offset
+            self._annotation.set_visible(True)
+        self.draw_idle()
+
+    def update_data(self, labels, scores, y_suffix=''):
         self.ax.clear()
         self._style_ax()
+        self._annotation = None
+        self._plot_data = None
         if scores:
-            x = range(len(scores))
-            self.ax.fill_between(x, scores, alpha=0.15, color=self.color)
-            self.ax.plot(x, scores, color=self.color, linewidth=2, marker='o', markersize=4)
-            self.ax.set_xticks(list(x))
-            self.ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=7)
+            # Filter out None values for plotting
+            valid = [(i, s) for i, s in enumerate(scores) if s is not None]
+            if valid:
+                x_vals, y_vals = zip(*valid)
+                valid_labels = [labels[i] for i in x_vals] if labels else []
+                self._plot_data = (list(x_vals), list(y_vals), valid_labels, y_suffix)
+                self.ax.fill_between(x_vals, y_vals, alpha=0.15, color=self.color)
+                self.ax.plot(x_vals, y_vals, color=self.color, linewidth=2, marker='o', markersize=4)
+                all_x = range(len(scores))
+                self.ax.set_xticks(list(all_x))
+                self.ax.set_xticklabels(labels, rotation=30, ha='right', fontsize=7)
+                if y_suffix:
+                    from matplotlib.ticker import FuncFormatter
+                    self.ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f'{int(v)}{y_suffix}'))
+            else:
+                self.ax.text(0.5, 0.5, 'No data', ha='center', va='center', color='#555a70', transform=self.ax.transAxes)
         else:
             self.ax.text(0.5, 0.5, 'No data', ha='center', va='center', color='#555a70', transform=self.ax.transAxes)
-        self.fig.tight_layout()
+        self.fig.subplots_adjust(top=0.85)  # Extra room for tooltip
+        self.fig.tight_layout(rect=[0, 0, 1, 0.92])
         self.draw()
 
 
@@ -486,15 +562,24 @@ class UserDetailDialog(QDialog):
 
         sh = self.user_data.get('score_history', {})
         charts_config = [
-            ("🎯 Go/No-Go Scores", ORANGE, sh.get('go_no_go', {})),
-            ("🎨 Stroop Scores", ACCENT, sh.get('stroop', {})),
-            ("😀 Emoji Scores", GREEN, sh.get('emoji', {})),
+            ("Go/No-Go", ORANGE, sh.get('go_no_go', {})),
+            ("Stroop", ACCENT, sh.get('stroop', {})),
+            ("Emoji", GREEN, sh.get('emoji', {})),
         ]
-        for title, color, data in charts_config:
-            chart = ScoreChart(title, color)
-            chart.update_data(data.get('labels', []), data.get('scores', []))
-            chart.setMinimumHeight(180)
-            chart_layout.addWidget(chart)
+        for name, color, data in charts_config:
+            # Score chart
+            score_chart = ScoreChart(f"{name} — Score", color)
+            score_chart.update_data(data.get('labels', []), data.get('scores', []))
+            score_chart.setMinimumHeight(180)
+            chart_layout.addWidget(score_chart)
+
+            # Latency chart
+            rt_data = data.get('reaction_time', [])
+            if any(v and v > 0 for v in rt_data):
+                latency_chart = ScoreChart(f"{name} — Latency", color)
+                latency_chart.update_data(data.get('labels', []), rt_data, y_suffix='ms')
+                latency_chart.setMinimumHeight(180)
+                chart_layout.addWidget(latency_chart)
 
         scroll.setWidget(chart_widget)
         layout.addWidget(scroll, 1)
@@ -546,10 +631,11 @@ class AdminWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CogStim Admin — Desktop")
-        self.setMinimumSize(1100, 650)
+        self.setMinimumSize(1250, 650)
         self.workers = []
         self.users_data = []
         self.reminder_sent_today = False
+        self.msg_failures = {}  # {user_id: error_string} – tracks send failures
 
         self.setup_ui()
         self.setup_tray()
@@ -582,7 +668,7 @@ class AdminWindow(QMainWindow):
         header_layout.addWidget(self.wa_connect_btn)
 
         self.wa_disconnect_btn = QPushButton("🔴 Disconnect")
-        self.wa_disconnect_btn.setStyleSheet(f"background: {RED}; color: white; border: none;")
+        self.wa_disconnect_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 8px;")
         self.wa_disconnect_btn.clicked.connect(self.disconnect_whatsapp)
         self.wa_disconnect_btn.setVisible(False)
         header_layout.addWidget(self.wa_disconnect_btn)
@@ -636,6 +722,11 @@ class AdminWindow(QMainWindow):
         add_user_btn.clicked.connect(self.add_account)
         header_layout.addWidget(add_user_btn)
 
+        export_btn = QPushButton("💾 Export CSV")
+        export_btn.setObjectName("primaryBtn")
+        export_btn.clicked.connect(self.export_csv)
+        header_layout.addWidget(export_btn)
+
         main_layout.addLayout(header_layout)
 
         # ── Search ──
@@ -646,19 +737,15 @@ class AdminWindow(QMainWindow):
 
         # ── Table ──
         self.table = QTableWidget()
-        self.table.setColumnCount(10)
+        self.table.setColumnCount(12)
         self.table.setHorizontalHeaderLabels([
-            "ID", "Username", "Last Exec", "Off Time",
+            "ID", "Username", "Status", "Last Exec", "Off Time",
             "Go/No-Go", "Stroop", "Emoji", "Phone", "Last Message",
-            "Actions"
+            "Msg Status", "Actions"
         ])
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        # Set sensible default widths
-        for col, w in enumerate([40, 120, 110, 80, 70, 70, 70, 110, 110, 200]):
-            self.table.setColumnWidth(col, w)
         self.table.verticalHeader().setVisible(False)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -872,33 +959,95 @@ class AdminWindow(QMainWindow):
     def _on_users_loaded(self, data):
         self.users_data = data
         self.populate_table(data)
+        self.table.resizeColumnsToContents()  # Auto-fit then allow manual resize
         self.statusBar().showMessage(f"✅ Loaded {len(data)} users")
         self.status_label.setText(f"Last refresh: {datetime.now().strftime('%H:%M:%S')}")
+
+    def _format_score_latency(self, score, latency):
+        """Format a score cell as 'score (latency ms)' or just '—'."""
+        if score is None:
+            return '—'
+        if latency is not None:
+            return f"{score}  ({latency}ms)"
+        return str(score)
+
+    @staticmethod
+    def _utc_to_local(utc_str):
+        """Convert a UTC datetime string (from server) to local time string."""
+        if not utc_str:
+            return ''
+        try:
+            utc_dt = datetime.strptime(utc_str, '%Y-%m-%d %H:%M')
+            # Convert UTC -> local by adding the local UTC offset
+            import time as _time
+            local_offset = timedelta(seconds=-_time.timezone if _time.daylight == 0 else -_time.altzone)
+            local_dt = utc_dt + local_offset
+            return local_dt.strftime('%Y-%m-%d %H:%M')
+        except (ValueError, TypeError):
+            return utc_str  # Return as-is if parsing fails
 
     def populate_table(self, data):
         self.table.setRowCount(len(data))
         for row, u in enumerate(data):
             self.table.setRowHeight(row, 40)
+
+            # Convert UTC timestamps to local time
+            last_exec_local = self._utc_to_local(u.get('last_exec') or '')
+            last_reminder_local = self._utc_to_local(u.get('last_reminder_sent') or '')
+
+            # Test completion status — compare local date
+            today_done = False
+            if last_exec_local:
+                try:
+                    last_exec_date = datetime.strptime(last_exec_local[:10], '%Y-%m-%d').date()
+                    today_done = last_exec_date == datetime.now().date()
+                except (ValueError, IndexError):
+                    pass
+            status_text = "✅ Done" if today_done else "⏳ Not Done"
+            status_color = GREEN if today_done else ORANGE
+
+            # Score + latency combined strings
+            go_nogo_str = self._format_score_latency(
+                u.get('score_go_nogo'), u.get('latency_go_nogo'))
+            stroop_str = self._format_score_latency(
+                u.get('score_stroop'), u.get('latency_stroop'))
+            emoji_str = self._format_score_latency(
+                u.get('score_emoji'), u.get('latency_emoji'))
+
+            # Message failure status
+            uid = u['id']
+            if uid in self.msg_failures:
+                msg_status_text = "❌ Failed"
+                msg_status_color = RED
+            else:
+                msg_status_text = "—"
+                msg_status_color = TEXT_SECONDARY
+
             items = [
-                str(u['id']),
-                u['username'],
-                u.get('last_exec') or '—',
-                u.get('off_time', 'Never'),
-                str(u.get('score_go_nogo') if u.get('score_go_nogo') is not None else '—'),
-                str(u.get('score_stroop') if u.get('score_stroop') is not None else '—'),
-                str(u.get('score_emoji') if u.get('score_emoji') is not None else '—'),
-                u.get('phone_number') or '—',
-                u.get('last_reminder_sent') or '—',
+                (str(u['id']), None),
+                (u['username'], None),
+                (status_text, status_color),
+                (last_exec_local or '—', None),
+                (u.get('off_time', 'Never'), None),
+                (go_nogo_str, None),
+                (stroop_str, None),
+                (emoji_str, None),
+                (u.get('phone_number') or '—', None),
+                (last_reminder_local or '—', None),
+                (msg_status_text, msg_status_color),
             ]
-            for col, text in enumerate(items):
+            for col, (text, color) in enumerate(items):
                 item = QTableWidgetItem(text)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 if col == 1:  # Username column - make clickable looking
                     item.setForeground(QColor(ACCENT))
                     item.setFont(QFont('Segoe UI', 10, QFont.Weight.Bold))
+                elif color:  # Status / Msg Status columns
+                    item.setForeground(QColor(color))
+                    item.setFont(QFont('Segoe UI', 9, QFont.Weight.Bold))
                 self.table.setItem(row, col, item)
 
-            uid, uname, uphone = u['id'], u['username'], u.get('phone_number', '')
+            uname, uphone = u['username'], u.get('phone_number', '')
 
             # Actions column — Send | Edit | Delete in one cell
             actions_widget = QWidget()
@@ -906,26 +1055,70 @@ class AdminWindow(QMainWindow):
             actions_layout.setContentsMargins(4, 2, 4, 2)
             actions_layout.setSpacing(4)
 
-            send_btn = QPushButton("Send")
-            send_btn.setObjectName("sendBtn")
-            send_btn.setFixedHeight(28)
+            send_btn = QPushButton("📨")
+            send_btn.setFixedHeight(26)
+            send_btn.setToolTip("Send Reminder")
+            send_btn.setStyleSheet(f"background: #1a8a4a; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px;")
             send_btn.setEnabled(bool(u.get('phone_number')))
             send_btn.clicked.connect(lambda checked, uid=uid, uname=uname, uphone=uphone: self._send_clicked(uid, uname, uphone))
             actions_layout.addWidget(send_btn)
 
-            edit_btn = QPushButton("Edit")
-            edit_btn.setFixedHeight(28)
-            edit_btn.setStyleSheet(f"background: {ORANGE}; color: #1a1a1a; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 11px;")
+            edit_btn = QPushButton("📝")
+            edit_btn.setFixedHeight(26)
+            edit_btn.setToolTip("Edit Account")
+            edit_btn.setStyleSheet(f"background: {ACCENT}; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px;")
             edit_btn.clicked.connect(lambda checked, _u=u: self.edit_account(_u))
             actions_layout.addWidget(edit_btn)
 
-            del_btn = QPushButton("Del")
-            del_btn.setFixedHeight(28)
-            del_btn.setStyleSheet(f"background: {RED}; color: white; border: none; border-radius: 6px; padding: 4px 8px; font-weight: 700; font-size: 11px;")
+            del_btn = QPushButton("🗑️")
+            del_btn.setFixedHeight(26)
+            del_btn.setToolTip("Delete Account")
+            del_btn.setStyleSheet(f"background: {RED}; border: none; border-radius: 6px; padding: 4px 8px; font-size: 12px;")
             del_btn.clicked.connect(lambda checked, _uid=uid, _uname=uname: self.delete_account(_uid, _uname))
             actions_layout.addWidget(del_btn)
 
-            self.table.setCellWidget(row, 9, actions_widget)
+            self.table.setCellWidget(row, 11, actions_widget)
+
+    def export_csv(self):
+        """Export all historical score data to a CSV file."""
+        default_name = f"cogstim_scores_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+        filepath, _ = QFileDialog.getSaveFileName(
+            self, "Export All Scores to CSV", default_name,
+            "CSV Files (*.csv);;All Files (*)")
+        if not filepath:
+            return
+
+        self.statusBar().showMessage("Fetching all score data for export...")
+        worker = ApiWorker(f"{SERVER_URL}/admin/api/scores/export")
+        worker.finished.connect(lambda data: self._write_csv(filepath, data))
+        worker.error.connect(lambda e: QMessageBox.warning(
+            self, "Export Failed", f"Could not fetch data:\n{e}"))
+        self.workers.append(worker)
+        worker.start()
+
+    def _write_csv(self, filepath, data):
+        """Write fetched score data to CSV."""
+        try:
+            with open(filepath, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "Username", "Phone", "Test Type", "Score",
+                    "Accuracy (%)", "Reaction Time (ms)", "Timestamp"
+                ])
+                for s in data:
+                    writer.writerow([
+                        s.get('username', ''),
+                        s.get('phone_number', ''),
+                        s.get('test_type', ''),
+                        s.get('score', ''),
+                        s.get('accuracy') if s.get('accuracy') is not None else '',
+                        s.get('reaction_time') if s.get('reaction_time') is not None else '',
+                        s.get('timestamp', ''),
+                    ])
+            self.statusBar().showMessage(
+                f"✅ Exported {len(data)} score records to {os.path.basename(filepath)}")
+        except Exception as e:
+            QMessageBox.warning(self, "Export Failed", f"Could not save CSV:\n{e}")
 
     def _send_clicked(self, uid, uname, uphone):
         if not wa_sender.is_ready():
@@ -944,6 +1137,8 @@ class AdminWindow(QMainWindow):
 
     def _on_single_sent(self, phone, result, uid, uname):
         if result['success']:
+            # Clear any previous failure
+            self.msg_failures.pop(uid, None)
             try:
                 requests.post(f"{SERVER_URL}/admin/api/send_reminder/{uid}",
                               headers=HEADERS, timeout=10)
@@ -952,7 +1147,9 @@ class AdminWindow(QMainWindow):
             self.statusBar().showMessage(f"✅ Reminder sent to {uname}")
             QTimer.singleShot(2000, self.load_users)
         else:
+            self.msg_failures[uid] = result.get('error', 'Unknown error')
             self.statusBar().showMessage(f"❌ Failed for {uname}: {result['error']}")
+            QTimer.singleShot(500, self.load_users)  # Refresh to show failure indicator
 
     def filter_table(self, text):
         text = text.lower()
@@ -960,6 +1157,20 @@ class AdminWindow(QMainWindow):
         self.populate_table(filtered)
 
     def on_row_double_clicked(self, row, col):
+        # Column 10 = Msg Status — click to show failure detail
+        if col == 10:
+            uid_item = self.table.item(row, 0)
+            if uid_item:
+                uid = int(uid_item.text())
+                if uid in self.msg_failures:
+                    uname_item = self.table.item(row, 1)
+                    uname = uname_item.text() if uname_item else str(uid)
+                    QMessageBox.warning(
+                        self, "Message Failure Detail",
+                        f"Failed to send to <b>{uname}</b>:<br><br>"
+                        f"<span style='color:{RED}'>{self.msg_failures[uid]}</span>")
+            return
+
         username_item = self.table.item(row, 1)
         if not username_item:
             return
@@ -1102,8 +1313,14 @@ class AdminWindow(QMainWindow):
         self.statusBar().showMessage("WhatsApp disconnected.")
         self.load_users()  # refresh to disable Send buttons
 
-    def _on_batch_progress(self, current, total, info, success):
+    def _on_batch_progress(self, current, total, info, success, user_id):
         self.statusBar().showMessage(f"[{current}/{total}] {info}")
+        if success:
+            self.msg_failures.pop(user_id, None)
+        else:
+            # Extract error message from the info string after the colon
+            err = info.split(': ', 1)[-1] if ': ' in info else info
+            self.msg_failures[user_id] = err
 
     def _on_batch_done(self, sent, failed):
         msg = f"✅ Auto-send complete: {sent} sent, {failed} failed"

@@ -1,7 +1,7 @@
 {
     "server_url": "https://timothysubrototest.pythonanywhere.com",
     "api_key": "cogstim-admin-secret-key-2026",
-    "reminder_hour": 13,
-    "reminder_minute": 0,
+    "reminder_hour": 17,
+    "reminder_minute": 9,
     "auto_send_enabled": true
 }
