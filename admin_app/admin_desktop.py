@@ -320,10 +320,14 @@ class ScoreChart(FigureCanvas):
         val_text = f"{int(yp)}{y_suffix}" if yp == int(yp) else f"{yp:.1f}{y_suffix}"
         text = f"{lbl}\n{val_text}"
 
-        # Position tooltip below or above depending on proximity to top
+        # Position tooltip: flip horizontally near right edge, vertically near top
+        x_min, x_max = self.ax.get_xlim()
         y_min, y_max = self.ax.get_ylim()
+        near_right = (xp - x_min) / (x_max - x_min) > 0.75 if x_max != x_min else False
         near_top = (yp - y_min) / (y_max - y_min) > 0.7 if y_max != y_min else False
-        offset = (10, -30) if near_top else (10, 14)
+        x_off = -80 if near_right else 10
+        y_off = -30 if near_top else 14
+        offset = (x_off, y_off)
 
         if self._annotation is None:
             self._annotation = self.ax.annotate(
@@ -363,8 +367,7 @@ class ScoreChart(FigureCanvas):
                 self.ax.text(0.5, 0.5, 'No data', ha='center', va='center', color='#555a70', transform=self.ax.transAxes)
         else:
             self.ax.text(0.5, 0.5, 'No data', ha='center', va='center', color='#555a70', transform=self.ax.transAxes)
-        self.fig.subplots_adjust(top=0.85)  # Extra room for tooltip
-        self.fig.tight_layout(rect=[0, 0, 1, 0.92])
+        self.fig.tight_layout(rect=[0, 0, 0.95, 0.92])  # Extra room for tooltip (top + right)
         self.draw()
 
 
