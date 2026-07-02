@@ -1,6 +1,6 @@
-Selamat siang *{username}*, mohon maaf mengganggu waktunya. Saya dr. Tim, residen neurologi (saraf) RS Ngoerah Denpasar.
+Selamat sore Bapak/Ibu *{username}*, mohon maaf mengganggu waktunya. Saya dr. Tim, residen neurologi (saraf) RS Ngoerah Denpasar.
 Izin mengingatkan untuk mengerjakan latihan kognitif hari ini.
 
-Link latihan: bit.ly/latihansaraf
+Link latihan: tr.ee/latihansaraf
 
 Terima kasih, semoga lekas pulih kembali 🙏

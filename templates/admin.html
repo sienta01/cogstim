@@ -276,6 +276,131 @@
             color: #8892b0;
         }
 
+        .admin-notes-cell {
+            font-size: 0.82rem;
+            color: #a0a8c0;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .status-pill.done {
+            background: rgba(37, 211, 102, 0.12);
+            color: #25D366;
+        }
+
+        .status-pill.pending {
+            background: rgba(255, 183, 77, 0.12);
+            color: #ffb74d;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 28px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: filter 0.15s, transform 0.15s;
+            margin-right: 4px;
+        }
+
+        .action-btn:hover {
+            filter: brightness(1.25);
+            transform: translateY(-1px);
+        }
+
+        .action-btn.edit {
+            background: #6c8cff;
+        }
+
+        .action-btn.delete {
+            background: #e74c3c;
+        }
+
+        /* ── Forms (Add/Edit Account, Notes) ──────── */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .form-input,
+        .form-textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #e4e6eb;
+            font-size: 0.9rem;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .form-input:focus,
+        .form-textarea:focus {
+            border-color: #6c8cff;
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: #555a70;
+        }
+
+        .modal-content.small {
+            max-width: 460px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .btn-danger {
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            border: none;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 4px 16px rgba(231, 76, 60, 0.35);
+            transform: translateY(-1px);
+        }
+
         /* ── Modal ────────────────────────────────── */
         .modal-overlay {
             display: none;
@@ -511,6 +636,8 @@
         <div class="topbar-title">🛡️ Admin Panel</div>
         <div class="topbar-actions">
             <button class="btn-outline" onclick="loadUsers()">🔄 Refresh</button>
+            <button class="btn-primary" onclick="openAddAccount()">➕ Add Account</button>
+            <button class="btn-primary" onclick="exportCsv()">💾 Export CSV</button>
             <a href="/dashboard" class="btn-outline">← Dashboard</a>
             <a href="/logout" class="btn-primary"
                 style="background: linear-gradient(135deg, #e74c3c, #c0392b);">Keluar</a>
@@ -554,15 +681,18 @@
             <table class="data-table" id="usersTable">
                 <thead>
                     <tr>
-                        <th onclick="sortColumn(0)">No</th>
+                        <th onclick="sortColumn(0)">ID</th>
                         <th onclick="sortColumn(1)">Username</th>
-                        <th onclick="sortColumn(2)">Last Exec</th>
-                        <th onclick="sortColumn(3)">Off Time</th>
-                        <th onclick="sortColumn(4)">Go/No-Go</th>
-                        <th onclick="sortColumn(5)">Stroop</th>
-                        <th onclick="sortColumn(6)">Emoji</th>
-                        <th onclick="sortColumn(7)">Phone</th>
-                        <th onclick="sortColumn(8)">Last Message</th>
+                        <th onclick="sortColumn(2)">Status</th>
+                        <th onclick="sortColumn(3)">Last Exec</th>
+                        <th onclick="sortColumn(4)">Off Time</th>
+                        <th onclick="sortColumn(5)">Go/No-Go</th>
+                        <th onclick="sortColumn(6)">Stroop</th>
+                        <th onclick="sortColumn(7)">Emoji</th>
+                        <th onclick="sortColumn(8)">Phone</th>
+                        <th onclick="sortColumn(9)">Admin Notes</th>
+                        <th onclick="sortColumn(10)">Last Message</th>
+                        <th style="cursor:default;">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody"></tbody>
@@ -593,6 +723,14 @@
                 </div>
             </div>
 
+            <div style="margin-bottom: 20px;">
+                <div class="detail-label" style="margin-bottom: 8px;">📝 Admin Notes</div>
+                <textarea id="adminNotesInput" rows="3" placeholder="Catatan admin untuk pengguna ini..."
+                    style="width:100%; background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 10px; color: #e4e6eb; font-size: 0.9rem; padding: 10px 14px; resize: vertical; font-family: inherit; outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='#6c8cff'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"></textarea>
+                <button class="btn-primary" style="margin-top: 8px; padding: 8px 20px;" onclick="saveNotes()">💾 Save Notes</button>
+            </div>
+
             <div class="chart-container">
                 <div class="chart-title">📊 Score History — Go/No-Go</div>
                 <canvas id="chartGoNogo" height="140"></canvas>
@@ -608,6 +746,65 @@
                 <canvas id="chartEmoji" height="140"></canvas>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Add/Edit Account Modal -->
+    <div class="modal-overlay" id="accountModal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <div class="modal-title" id="accountModalTitle">➕ Add New Account</div>
+                <button class="modal-close" onclick="closeAccountModal()">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" class="form-input" id="accUsername" placeholder="Enter username">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Phone</label>
+                <input type="text" class="form-input" id="accPhone" placeholder="+62... or 08...">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" id="accPassword" placeholder="Enter password">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeAccountModal()">Cancel</button>
+                <button class="btn-primary" id="accountSaveBtn" onclick="submitAccount()">➕ Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-content small" style="text-align:center;">
+            <div style="font-size: 2.5rem; margin-bottom: 12px;">⚠️</div>
+            <div style="font-size: 1.05rem; font-weight: 600; margin-bottom: 8px;">
+                Delete user <b id="deleteUsername"></b>?
+            </div>
+            <div style="font-size: 0.85rem; color: #8892b0;">
+                This will permanently remove the account and all their test scores.
+            </div>
+            <div class="modal-actions" style="justify-content: center;">
+                <button class="btn-outline" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn-danger" onclick="doDelete()">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Notes Modal -->
+    <div class="modal-overlay" id="notesModal">
+        <div class="modal-content small">
+            <div class="modal-header">
+                <div class="modal-title" id="notesModalTitle">🗒️ Admin Notes</div>
+                <button class="modal-close" onclick="closeNotesModal()">&times;</button>
+            </div>
+            <textarea class="form-textarea" id="notesModalInput"
+                placeholder="Write admin notes about this user..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-outline" onclick="closeNotesModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveNotesModal()">💾 Save Notes</button>
+            </div>
         </div>
     </div>
 
@@ -634,21 +831,66 @@
             }
         }
 
+        // ── Helpers ─────────────────────────────────
+        function esc(s) {
+            const div = document.createElement('div');
+            div.textContent = s ?? '';
+            return div.innerHTML;
+        }
+
+        function utcToLocal(utcStr) {
+            // Server sends 'YYYY-MM-DD HH:MM' in UTC — convert to local time
+            if (!utcStr) return '';
+            const d = new Date(utcStr.replace(' ', 'T') + ':00Z');
+            if (isNaN(d)) return utcStr;
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function localToday() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        }
+
+        function isDoneToday(u) {
+            const local = utcToLocal(u.last_exec);
+            return !!local && local.slice(0, 10) === localToday();
+        }
+
+        function scoreCell(score, latency, pillClass) {
+            if (score === null || score === undefined) return '<span class="score-pill none">—</span>';
+            const lat = (latency !== null && latency !== undefined) ? `<span class="latency-sub">${latency} ms</span>` : '';
+            return `<div class="score-with-latency"><span class="score-pill ${pillClass}">${score}</span>${lat}</div>`;
+        }
+
         function renderTable(data) {
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
 
-            data.forEach((u, idx) => {
+            data.forEach(u => {
+                const done = isDoneToday(u);
+                const notes = u.admin_notes || '';
+                const notesDisplay = notes ? (notes.length > 40 ? notes.slice(0, 40) + '…' : notes) : '—';
+                const notesTitle = notes ? `${notes}\n\n(Double-click to edit)` : 'Double-click to add notes';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${idx + 1}</td>
-                    <td><a class="username-link" onclick="showUserDetail(${u.id})">${u.username}</a></td>
-                    <td class="time-ago">${u.last_exec || '—'}</td>
-                    <td class="time-ago">${u.off_time}</td>
-                    <td>${u.score_go_nogo !== null ? `<div class="score-with-latency"><span class="score-pill go-nogo">${u.score_go_nogo}</span>${u.latency_go_nogo !== null ? `<span class="latency-sub">${u.latency_go_nogo} ms</span>` : ''}</div>` : '<span class="score-pill none">—</span>'}</td>
-                    <td>${u.score_stroop !== null ? `<div class="score-with-latency"><span class="score-pill stroop">${u.score_stroop}</span>${u.latency_stroop !== null ? `<span class="latency-sub">${u.latency_stroop} ms</span>` : ''}</div>` : '<span class="score-pill none">—</span>'}</td>
-                    <td>${u.score_emoji !== null ? `<div class="score-with-latency"><span class="score-pill emoji">${u.score_emoji}</span>${u.latency_emoji !== null ? `<span class="latency-sub">${u.latency_emoji} ms</span>` : ''}</div>` : '<span class="score-pill none">—</span>'}</td>
-                    <td class="phone-cell">${u.phone_number || '—'}</td>
+                    <td>${u.id}</td>
+                    <td><a class="username-link" onclick="showUserDetail(${u.id})">${esc(u.username)}</a></td>
+                    <td><span class="status-pill ${done ? 'done' : 'pending'}">${done ? '✅ Done' : '⏳ Not Done'}</span></td>
+                    <td class="time-ago">${utcToLocal(u.last_exec) || '—'}</td>
+                    <td class="time-ago">${esc(u.off_time)}</td>
+                    <td>${scoreCell(u.score_go_nogo, u.latency_go_nogo, 'go-nogo')}</td>
+                    <td>${scoreCell(u.score_stroop, u.latency_stroop, 'stroop')}</td>
+                    <td>${scoreCell(u.score_emoji, u.latency_emoji, 'emoji')}</td>
+                    <td class="phone-cell">${esc(u.phone_number) || '—'}</td>
+                    <td class="admin-notes-cell" title="${esc(notesTitle)}" ondblclick="openNotesModal(${u.id})">${esc(notesDisplay)}</td>
+                    <td class="time-ago">${utcToLocal(u.last_reminder_sent) || '—'}</td>
+                    <td style="white-space:nowrap;">
+                        <button class="action-btn edit" title="Edit Account" onclick="openEditAccount(${u.id})">📝</button>
+                        <button class="action-btn delete" title="Delete Account" onclick="confirmDelete(${u.id})">🗑️</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -658,10 +900,9 @@
         }
 
         function updateStats(data) {
-            const today = new Date().toISOString().slice(0, 10);
             document.getElementById('statTotalUsers').textContent = data.length;
-            document.getElementById('statActiveToday').textContent = data.filter(u => u.last_exec && u.last_exec.startsWith(today)).length;
-            document.getElementById('statInactive').textContent = data.filter(u => !u.last_exec || !u.last_exec.startsWith(today)).length;
+            document.getElementById('statActiveToday').textContent = data.filter(isDoneToday).length;
+            document.getElementById('statInactive').textContent = data.filter(u => !isDoneToday(u)).length;
             document.getElementById('statNoPhone').textContent = data.filter(u => !u.phone_number).length;
         }
 
@@ -680,7 +921,7 @@
         function sortColumn(colIdx) {
             sortDir[colIdx] = !sortDir[colIdx];
             const dir = sortDir[colIdx] ? 1 : -1;
-            const keys = ['id', 'username', 'last_exec', 'off_time', 'score_go_nogo', 'score_stroop', 'score_emoji', 'phone_number', 'last_reminder_sent'];
+            const keys = ['id', 'username', 'last_exec', 'last_exec', 'off_time', 'score_go_nogo', 'score_stroop', 'score_emoji', 'phone_number', 'admin_notes', 'last_reminder_sent'];
             const key = keys[colIdx];
             usersData.sort((a, b) => {
                 const va = a[key] ?? '';
@@ -704,8 +945,9 @@
 
                 document.getElementById('modalTitle').textContent = `👤 ${data.username}`;
                 document.getElementById('detailPhone').textContent = data.phone_number || '—';
-                document.getElementById('detailLastExec').textContent = data.last_exec || 'Belum pernah';
-                document.getElementById('detailLastReminder').textContent = data.last_reminder_sent || 'Belum pernah';
+                document.getElementById('detailLastExec').textContent = utcToLocal(data.last_exec) || 'Belum pernah';
+                document.getElementById('detailLastReminder').textContent = utcToLocal(data.last_reminder_sent) || 'Belum pernah';
+                document.getElementById('adminNotesInput').value = data.admin_notes || '';
 
 
                 // Render charts
@@ -808,18 +1050,212 @@
             });
         }
 
+        async function saveNotes() {
+            if (!currentUserId) return;
+            const notes = document.getElementById('adminNotesInput').value;
+            try {
+                const resp = await fetch(`/admin/api/users/${currentUserId}/notes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes })
+                });
+                const result = await resp.json();
+                if (result.success) {
+                    showToast('Catatan berhasil disimpan', 'success');
+                    loadUsers();
+                } else {
+                    showToast(result.error || 'Gagal menyimpan catatan', 'error');
+                }
+            } catch (e) {
+                showToast('Gagal menyimpan catatan', 'error');
+            }
+        }
+
         function closeModal() {
             document.getElementById('userModal').classList.remove('active');
         }
 
-        // Close modal on overlay click
-        document.getElementById('userModal').addEventListener('click', function (e) {
-            if (e.target === this) closeModal();
+        // ── Add / Edit Account ───────────────────────
+        let editUserId = null;
+
+        function openAddAccount() {
+            editUserId = null;
+            document.getElementById('accountModalTitle').textContent = '➕ Add New Account';
+            document.getElementById('accUsername').value = '';
+            document.getElementById('accPhone').value = '';
+            document.getElementById('accPassword').value = '';
+            document.getElementById('accPassword').placeholder = 'Enter password';
+            document.getElementById('accountSaveBtn').textContent = '➕ Create';
+            document.getElementById('accountModal').classList.add('active');
+        }
+
+        function openEditAccount(userId) {
+            const u = usersData.find(x => x.id === userId);
+            if (!u) return;
+            editUserId = userId;
+            document.getElementById('accountModalTitle').textContent = '✏️ Edit Account';
+            document.getElementById('accUsername').value = u.username;
+            document.getElementById('accPhone').value = u.phone_number || '';
+            document.getElementById('accPassword').value = '';
+            document.getElementById('accPassword').placeholder = 'Leave blank to keep current';
+            document.getElementById('accountSaveBtn').textContent = '💾 Save';
+            document.getElementById('accountModal').classList.add('active');
+        }
+
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.remove('active');
+        }
+
+        async function submitAccount() {
+            const username = document.getElementById('accUsername').value.trim();
+            const password = document.getElementById('accPassword').value.trim();
+            const phone = document.getElementById('accPhone').value.trim();
+
+            if (!username) {
+                showToast('Username is required', 'error');
+                return;
+            }
+            if (editUserId === null && !password) {
+                showToast('Password is required for new accounts', 'error');
+                return;
+            }
+
+            const isEdit = editUserId !== null;
+            const url = isEdit ? `/admin/api/users/${editUserId}/edit` : '/admin/api/users/create';
+            const method = isEdit ? 'PUT' : 'POST';
+
+            try {
+                const resp = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password, phone_number: phone })
+                });
+                const result = await resp.json();
+                if (resp.ok && result.success !== false) {
+                    showToast(result.message || (isEdit ? 'Account updated' : 'Account created'), 'success');
+                    closeAccountModal();
+                    loadUsers();
+                } else {
+                    showToast(result.error || 'Operation failed', 'error');
+                }
+            } catch (e) {
+                showToast('Operation failed', 'error');
+            }
+        }
+
+        // ── Delete Account ───────────────────────────
+        let deleteUserId = null;
+
+        function confirmDelete(userId) {
+            const u = usersData.find(x => x.id === userId);
+            if (!u) return;
+            deleteUserId = userId;
+            document.getElementById('deleteUsername').textContent = u.username;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        async function doDelete() {
+            if (deleteUserId === null) return;
+            try {
+                const resp = await fetch(`/admin/api/users/${deleteUserId}/delete`, { method: 'DELETE' });
+                const result = await resp.json();
+                if (resp.ok && result.success !== false) {
+                    showToast(result.message || 'Account deleted', 'success');
+                    loadUsers();
+                } else {
+                    showToast(result.error || 'Delete failed', 'error');
+                }
+            } catch (e) {
+                showToast('Delete failed', 'error');
+            }
+            closeDeleteModal();
+        }
+
+        // ── Admin Notes Modal ────────────────────────
+        let notesUserId = null;
+
+        function openNotesModal(userId) {
+            const u = usersData.find(x => x.id === userId);
+            if (!u) return;
+            notesUserId = userId;
+            document.getElementById('notesModalTitle').textContent = `🗒️ Notes for ${u.username}`;
+            document.getElementById('notesModalInput').value = u.admin_notes || '';
+            document.getElementById('notesModal').classList.add('active');
+        }
+
+        function closeNotesModal() {
+            document.getElementById('notesModal').classList.remove('active');
+        }
+
+        async function saveNotesModal() {
+            if (notesUserId === null) return;
+            const notes = document.getElementById('notesModalInput').value.trim();
+            try {
+                const resp = await fetch(`/admin/api/users/${notesUserId}/notes`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes })
+                });
+                const result = await resp.json();
+                if (resp.ok && result.success) {
+                    showToast(result.message || 'Notes updated', 'success');
+                    closeNotesModal();
+                    loadUsers();
+                } else {
+                    showToast(result.error || 'Failed to save notes', 'error');
+                }
+            } catch (e) {
+                showToast('Failed to save notes', 'error');
+            }
+        }
+
+        // ── Export CSV ───────────────────────────────
+        async function exportCsv() {
+            showToast('Fetching all score data for export...', 'info');
+            try {
+                const resp = await fetch('/admin/api/scores/export');
+                const data = await resp.json();
+                const header = ['Username', 'Phone', 'Test Type', 'Score', 'Accuracy (%)', 'Reaction Time (ms)', 'Timestamp'];
+                const rows = data.map(s => [
+                    s.username ?? '', s.phone_number ?? '', s.test_type ?? '', s.score ?? '',
+                    s.accuracy ?? '', s.reaction_time ?? '', s.timestamp ?? ''
+                ]);
+                const csv = [header, ...rows]
+                    .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+                    .join('\r\n');
+
+                const pad = n => String(n).padStart(2, '0');
+                const d = new Date();
+                const stamp = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+
+                const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `cogstim_scores_${stamp}.csv`;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showToast(`✅ Exported ${data.length} score records`, 'success');
+            } catch (e) {
+                showToast('Export failed', 'error');
+            }
+        }
+
+        // Close any modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function (e) {
+                if (e.target === this) this.classList.remove('active');
+            });
         });
 
-        // Close modal on Escape key
+        // Close all modals on Escape key
         document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            }
         });
 
         // ── Toast ────────────────────────────────────

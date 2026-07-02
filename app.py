@@ -87,6 +87,7 @@ class User(db.Model):
     phone_number = db.Column(db.String(20), nullable=True)  # e.g. +6281234567890
     is_admin = db.Column(db.Boolean, default=False)
     last_reminder_sent = db.Column(db.DateTime, nullable=True)
+    admin_notes = db.Column(db.Text, nullable=True)
 
     # Relationship to Score
     scores = db.relationship('Score', backref='user', lazy=True)
@@ -685,7 +686,8 @@ def admin_api_users():
             'latency_stroop': latest_latencies['stroop'],
             'latency_emoji': latest_latencies['emoji'],
             'today_done': today_done,
-            'last_reminder_sent': u.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if u.last_reminder_sent else None
+            'last_reminder_sent': u.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if u.last_reminder_sent else None,
+            'admin_notes': u.admin_notes or ''
         })
     return jsonify(result)
 
@@ -719,6 +721,7 @@ def admin_api_user_detail(user_id):
         'phone_number': user.phone_number or '',
         'last_exec': last_score.timestamp.strftime('%Y-%m-%d %H:%M') if last_score and last_score.timestamp else None,
         'last_reminder_sent': user.last_reminder_sent.strftime('%Y-%m-%d %H:%M') if user.last_reminder_sent else None,
+        'admin_notes': user.admin_notes or '',
         'score_history': score_history
     })
 
@@ -848,6 +851,21 @@ def admin_api_delete_user(user_id):
     return jsonify({"success": True, "message": f"User '{username}' deleted"})
 
 
+@app.route("/admin/api/users/<int:user_id>/notes", methods=["PUT"])
+def admin_api_update_notes(user_id):
+    """Update admin notes for a user"""
+    api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+    is_admin_session = 'user_id' in session and session.get('is_admin', False)
+    if not is_admin_session and api_key != app.config.get('ADMIN_API_KEY', 'cogstim-admin-secret-key-2026'):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+    user.admin_notes = (data.get('notes') or '').strip() or None
+    db.session.commit()
+    return jsonify({"success": True, "message": f"Notes updated for {user.username}"})
+
+
 @app.route("/admin/api/scores/export")
 def admin_api_scores_export():
     """Return all scores for all users in a flat list for CSV export."""
@@ -888,6 +906,10 @@ with app.app_context():
     if 'last_reminder_sent' not in existing_columns:
         with db.engine.connect() as conn:
             conn.execute(sqlalchemy.text('ALTER TABLE user ADD COLUMN last_reminder_sent DATETIME'))
+            conn.commit()
+    if 'admin_notes' not in existing_columns:
+        with db.engine.connect() as conn:
+            conn.execute(sqlalchemy.text('ALTER TABLE user ADD COLUMN admin_notes TEXT'))
             conn.commit()
 
 # Run the application for development

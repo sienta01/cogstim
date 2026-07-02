@@ -471,6 +471,60 @@ class AccountFormDialog(QDialog):
         self.accept()
 
 
+# ── Admin Notes Dialog ───────────────────────────────────────────
+class NotesDialog(QDialog):
+    """Dialog for viewing/editing the admin notes of a user."""
+    def __init__(self, username, notes, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(f"Admin Notes — {username}")
+        self.setMinimumSize(440, 340)
+        self.result_notes = None
+        self.setup_ui(username, notes)
+
+    def setup_ui(self, username, notes):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        layout.setContentsMargins(28, 28, 28, 28)
+
+        header = QLabel(f"🗒️ Notes for {username}")
+        header.setFont(QFont('Segoe UI', 16, QFont.Weight.Bold))
+        header.setStyleSheet(f"color: {ACCENT};")
+        layout.addWidget(header)
+
+        self.notes_edit = QTextEdit()
+        self.notes_edit.setPlaceholderText("Write admin notes about this user...")
+        self.notes_edit.setPlainText(notes or '')
+        self.notes_edit.setStyleSheet(f"""
+            QTextEdit {{
+                background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.1);
+                border-radius: 8px; padding: 10px; color: {TEXT_PRIMARY}; font-size: 12px;
+            }}
+            QTextEdit:focus {{ border-color: {ACCENT}; }}
+        """)
+        layout.addWidget(self.notes_edit, 1)
+
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(12)
+
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setMinimumHeight(40)
+        cancel_btn.clicked.connect(self.reject)
+        btn_layout.addWidget(cancel_btn)
+
+        save_btn = QPushButton("💾 Save Notes")
+        save_btn.setObjectName("primaryBtn")
+        save_btn.setMinimumHeight(40)
+        save_btn.setFont(QFont('Segoe UI', 11, QFont.Weight.Bold))
+        save_btn.clicked.connect(self.on_save)
+        btn_layout.addWidget(save_btn)
+
+        layout.addLayout(btn_layout)
+
+    def on_save(self):
+        self.result_notes = self.notes_edit.toPlainText().strip()
+        self.accept()
+
+
 # ── Confirm Delete Dialog ────────────────────────────────────────
 class ConfirmDeleteDialog(QDialog):
     def __init__(self, username, parent=None):
@@ -629,6 +683,97 @@ class UserDetailDialog(QDialog):
                                 f"❌ {result['error']}")
 
 
+# ── Send Now Dialog ──────────────────────────────────────────────
+class SendNowDialog(QDialog):
+    """Dialog to select which users to send a WhatsApp reminder to right now."""
+
+    def __init__(self, users, parent=None):
+        super().__init__(parent)
+        self.users = users
+        self.selected_users = []
+        self.setWindowTitle("Send Reminder Now")
+        self.setMinimumSize(440, 500)
+        self._checkboxes = []
+        self.setup_ui()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setSpacing(12)
+        layout.setContentsMargins(24, 24, 24, 24)
+
+        title = QLabel("📨 Select Recipients")
+        title.setFont(QFont('Segoe UI', 15, QFont.Weight.Bold))
+        layout.addWidget(title)
+
+        hint = QLabel("Choose which users to send the reminder to:")
+        hint.setStyleSheet(f"color: {TEXT_SECONDARY}; font-size: 11px;")
+        layout.addWidget(hint)
+
+        # Select all / none buttons
+        sel_row = QHBoxLayout()
+        sel_all = QPushButton("Select All")
+        sel_all.setFixedHeight(28)
+        sel_all.setStyleSheet("font-size: 11px; padding: 2px 12px;")
+        sel_all.clicked.connect(lambda: self._set_all(True))
+        sel_none = QPushButton("Clear All")
+        sel_none.setFixedHeight(28)
+        sel_none.setStyleSheet("font-size: 11px; padding: 2px 12px;")
+        sel_none.clicked.connect(lambda: self._set_all(False))
+        sel_row.addWidget(sel_all)
+        sel_row.addWidget(sel_none)
+        sel_row.addStretch()
+        layout.addLayout(sel_row)
+
+        # Scrollable checkbox list
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        container = QWidget()
+        cb_layout = QVBoxLayout(container)
+        cb_layout.setSpacing(6)
+        cb_layout.setContentsMargins(4, 4, 4, 4)
+
+        for u in self.users:
+            phone = u.get('phone_number', '')
+            label = f"{u['username']}  ({phone})"
+            cb = QCheckBox(label)
+            cb.setChecked(True)
+            cb.setFont(QFont('Segoe UI', 11))
+            cb_layout.addWidget(cb)
+            self._checkboxes.append((cb, u))
+
+        cb_layout.addStretch()
+        scroll.setWidget(container)
+        layout.addWidget(scroll, 1)
+
+        # Buttons
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(10)
+        cancel_btn = QPushButton("Cancel")
+        cancel_btn.setMinimumHeight(40)
+        cancel_btn.clicked.connect(self.reject)
+        btn_row.addWidget(cancel_btn)
+
+        send_btn = QPushButton("📨 Send to Selected")
+        send_btn.setObjectName("sendBtn")
+        send_btn.setMinimumHeight(40)
+        send_btn.setFont(QFont('Segoe UI', 11, QFont.Weight.Bold))
+        send_btn.clicked.connect(self._on_send)
+        btn_row.addWidget(send_btn)
+        layout.addLayout(btn_row)
+
+    def _set_all(self, checked):
+        for cb, _ in self._checkboxes:
+            cb.setChecked(checked)
+
+    def _on_send(self):
+        self.selected_users = [u for cb, u in self._checkboxes if cb.isChecked()]
+        if not self.selected_users:
+            QMessageBox.warning(self, "No Selection", "Select at least one user.")
+            return
+        self.accept()
+
+
 # ── Main Window ──────────────────────────────────────────────────
 class AdminWindow(QMainWindow):
     def __init__(self):
@@ -715,6 +860,12 @@ class AdminWindow(QMainWindow):
         self.minute_spin.valueChanged.connect(self._on_reminder_settings_changed)
         header_layout.addWidget(self.minute_spin)
 
+        self.send_now_btn = QPushButton("📨 Send Now")
+        self.send_now_btn.setObjectName("sendBtn")
+        self.send_now_btn.setToolTip("Choose recipients and send reminder now")
+        self.send_now_btn.clicked.connect(self.open_send_now_dialog)
+        header_layout.addWidget(self.send_now_btn)
+
         refresh_btn = QPushButton("🔄 Refresh")
         refresh_btn.setObjectName("primaryBtn")
         refresh_btn.clicked.connect(self.load_users)
@@ -740,11 +891,11 @@ class AdminWindow(QMainWindow):
 
         # ── Table ──
         self.table = QTableWidget()
-        self.table.setColumnCount(12)
+        self.table.setColumnCount(13)
         self.table.setHorizontalHeaderLabels([
             "ID", "Username", "Status", "Last Exec", "Off Time",
-            "Go/No-Go", "Stroop", "Emoji", "Phone", "Last Message",
-            "Msg Status", "Actions"
+            "Go/No-Go", "Stroop", "Emoji", "Phone", "Admin Notes",
+            "Last Message", "Msg Status", "Actions"
         ])
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
@@ -936,6 +1087,34 @@ class AdminWindow(QMainWindow):
         self.workers.append(worker)
         worker.start()
 
+    def open_send_now_dialog(self):
+        """Open dialog to select recipients and send reminders immediately."""
+        if not wa_sender.is_ready():
+            QMessageBox.warning(self, "Not Connected",
+                                "Connect WhatsApp first using the 🟢 Connect WA button.")
+            return
+        self.statusBar().showMessage("Fetching user list...")
+        worker = ApiWorker(f"{SERVER_URL}/admin/api/users")
+        worker.finished.connect(self._on_users_for_send_now)
+        worker.error.connect(lambda e: self.statusBar().showMessage(f"❌ Error: {e}"))
+        self.workers.append(worker)
+        worker.start()
+
+    def _on_users_for_send_now(self, all_users):
+        users_with_phone = [u for u in all_users if u.get('phone_number')]
+        if not users_with_phone:
+            QMessageBox.information(self, "No Recipients", "No users with phone numbers found.")
+            return
+        dialog = SendNowDialog(users_with_phone, self)
+        dialog.setStyleSheet(STYLESHEET)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.selected_users:
+            template = load_message_template()
+            self._batch_worker = WaBatchWorker(dialog.selected_users, template)
+            self._batch_worker.progress.connect(self._on_batch_progress)
+            self._batch_worker.done.connect(self._on_batch_done)
+            self._batch_worker.start()
+            self.statusBar().showMessage(f"📲 Sending to {len(dialog.selected_users)} users...")
+
     def _on_pending_received(self, pending_users):
         users_with_phone = [u for u in pending_users if u.get('phone_number')]
         if not users_with_phone:
@@ -1026,6 +1205,9 @@ class AdminWindow(QMainWindow):
                 msg_status_text = "—"
                 msg_status_color = TEXT_SECONDARY
 
+            notes = u.get('admin_notes') or ''
+            notes_display = (notes[:30] + '…') if len(notes) > 30 else notes or '—'
+
             items = [
                 (str(u['id']), None),
                 (u['username'], None),
@@ -1036,6 +1218,7 @@ class AdminWindow(QMainWindow):
                 (stroop_str, None),
                 (emoji_str, None),
                 (u.get('phone_number') or '—', None),
+                (notes_display, TEXT_SECONDARY),
                 (last_reminder_local or '—', None),
                 (msg_status_text, msg_status_color),
             ]
@@ -1048,6 +1231,9 @@ class AdminWindow(QMainWindow):
                 elif color:  # Status / Msg Status columns
                     item.setForeground(QColor(color))
                     item.setFont(QFont('Segoe UI', 9, QFont.Weight.Bold))
+                if col == 9:  # Admin Notes column
+                    item.setToolTip(f"{notes}\n\n(Double-click to edit)" if notes
+                                    else "Double-click to add notes")
                 self.table.setItem(row, col, item)
 
             uname, uphone = u['username'], u.get('phone_number', '')
@@ -1080,7 +1266,7 @@ class AdminWindow(QMainWindow):
             del_btn.clicked.connect(lambda checked, _uid=uid, _uname=uname: self.delete_account(_uid, _uname))
             actions_layout.addWidget(del_btn)
 
-            self.table.setCellWidget(row, 11, actions_widget)
+            self.table.setCellWidget(row, 12, actions_widget)
 
     def export_csv(self):
         """Export all historical score data to a CSV file."""
@@ -1160,8 +1346,18 @@ class AdminWindow(QMainWindow):
         self.populate_table(filtered)
 
     def on_row_double_clicked(self, row, col):
-        # Column 10 = Msg Status — click to show failure detail
-        if col == 10:
+        # Column 9 = Admin Notes — double-click to edit
+        if col == 9:
+            uid_item = self.table.item(row, 0)
+            if uid_item:
+                uid = int(uid_item.text())
+                user = next((u for u in self.users_data if u['id'] == uid), None)
+                if user:
+                    self.edit_notes(user)
+            return
+
+        # Column 11 = Msg Status — click to show failure detail
+        if col == 11:
             uid_item = self.table.item(row, 0)
             if uid_item:
                 uid = int(uid_item.text())
@@ -1246,6 +1442,24 @@ class AdminWindow(QMainWindow):
     def _on_account_deleted(self, result):
         self.statusBar().showMessage(f"✅ {result.get('message', 'Account deleted')}")
         QMessageBox.information(self, "Deleted", result.get('message', 'Account deleted successfully.'))
+        self.load_users()
+
+    def edit_notes(self, user):
+        """Open the admin notes editor for a user and save changes to the server."""
+        dialog = NotesDialog(user['username'], user.get('admin_notes') or '', self)
+        dialog.setStyleSheet(STYLESHEET)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.result_notes is not None:
+            uid = user['id']
+            self.statusBar().showMessage(f"Saving notes for {user['username']}...")
+            worker = ApiWorker(f"{SERVER_URL}/admin/api/users/{uid}/notes", 'PUT',
+                               {'notes': dialog.result_notes})
+            worker.finished.connect(self._on_notes_saved)
+            worker.error.connect(self._on_account_error)
+            self.workers.append(worker)
+            worker.start()
+
+    def _on_notes_saved(self, result):
+        self.statusBar().showMessage(f"✅ {result.get('message', 'Notes updated')}")
         self.load_users()
 
     def _on_account_error(self, error):
