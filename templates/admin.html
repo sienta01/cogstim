@@ -668,7 +668,7 @@
     <div class="table-section">
         <div class="table-header">
             <div class="table-title">📋 Daftar Pengguna</div>
-            <input type="text" class="search-box" id="searchBox" placeholder="🔍 Cari pengguna..."
+            <input type="search" class="search-box" id="searchBox" name="table-filter" autocomplete="off" placeholder="🔍 Cari pengguna..."
                 oninput="filterTable()">
         </div>
 
@@ -1269,6 +1269,13 @@
         }
 
         // ── Init ─────────────────────────────────────
+        // Clear any browser-autofilled value in the search box (autofill can
+        // fire after load without an 'input' event, leaving the table filtered)
+        document.getElementById('searchBox').value = '';
+        setTimeout(() => {
+            const sb = document.getElementById('searchBox');
+            if (sb.value) { sb.value = ''; filterTable(); }
+        }, 300);
         loadUsers();
     </script>
 </body>
